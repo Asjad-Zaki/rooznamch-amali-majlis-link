@@ -23,7 +23,9 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
     status: 'todo' as Task['status'],
     priority: 'medium' as Task['priority'],
     assignedTo: '',
-    dueDate: ''
+    dueDate: '',
+    progress: 0,
+    memberNotes: ''
   });
 
   useEffect(() => {
@@ -34,7 +36,9 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
         status: task.status,
         priority: task.priority,
         assignedTo: task.assignedTo,
-        dueDate: task.dueDate
+        dueDate: task.dueDate,
+        progress: task.progress,
+        memberNotes: task.memberNotes
       });
     } else {
       setFormData({
@@ -43,7 +47,9 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
         status: 'todo',
         priority: 'medium',
         assignedTo: '',
-        dueDate: ''
+        dueDate: '',
+        progress: 0,
+        memberNotes: ''
       });
     }
   }, [task, isOpen]);
