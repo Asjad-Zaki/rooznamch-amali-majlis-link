@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
 import TaskModal from './TaskModal';
+import NotificationPanel, { Notification } from './NotificationPanel';
 import { Task } from './TaskCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
@@ -62,25 +63,63 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
+  // Notification system
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const { toast } = useToast();
+
+  const createNotification = (type: Notification['type'], title: string, message: string) => {
+    const newNotification: Notification = {
+      id: Date.now().toString(),
+      title,
+      message,
+      type,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Show toast for real-time notification
+    if (userRole === 'member') {
+      toast({
+        title: title,
+        description: message,
+      });
+    }
+  };
+
   const handleAddTask = () => {
+    if (userRole !== 'admin') return;
     setCurrentTask(null);
     setModalMode('create');
     setIsModalOpen(true);
   };
 
   const handleEditTask = (task: Task) => {
+    if (userRole !== 'admin') return;
     setCurrentTask(task);
     setModalMode('edit');
     setIsModalOpen(true);
   };
 
   const handleDeleteTask = (taskId: string) => {
-    if (userRole === 'admin') {
+    if (userRole !== 'admin') return;
+    
+    const taskToDelete = tasks.find(task => task.id === taskId);
+    if (taskToDelete) {
       setTasks(tasks.filter(task => task.id !== taskId));
+      createNotification(
+        'task_deleted',
+        'ٹاسک حذف کر دیا گیا',
+        `"${taskToDelete.title}" ٹاسک منتظم کی جانب سے حذف کر دیا گیا ہے`
+      );
     }
   };
 
   const handleSaveTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    if (userRole !== 'admin') return;
+    
     if (modalMode === 'create') {
       const newTask: Task = {
         ...taskData,
@@ -88,22 +127,68 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
         createdAt: new Date().toISOString()
       };
       setTasks([...tasks, newTask]);
+      createNotification(
+        'task_created',
+        'نیا ٹاسک بنایا گیا',
+        `"${newTask.title}" نام کا نیا ٹاسک ${newTask.assignedTo} کو تفویض کیا گیا ہے`
+      );
     } else if (currentTask) {
       setTasks(tasks.map(task => 
         task.id === currentTask.id 
           ? { ...task, ...taskData }
           : task
       ));
+      createNotification(
+        'task_updated',
+        'ٹاسک اپڈیٹ ہوا',
+        `"${taskData.title}" ٹاسک میں تبدیلی کی گئی ہے`
+      );
     }
   };
 
   const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { ...task, status: newStatus }
-        : task
-    ));
+    if (userRole !== 'admin') return;
+    
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setTasks(tasks.map(task => 
+        task.id === taskId 
+          ? { ...task, status: newStatus }
+          : task
+      ));
+      
+      const statusLabels = {
+        todo: 'کرنا ہے',
+        inprogress: 'جاری',
+        review: 'جائزہ',
+        done: 'مکمل'
+      };
+      
+      createNotification(
+        'task_updated',
+        'ٹاسک کی حالت تبدیل ہوئی',
+        `"${task.title}" کی حالت "${statusLabels[newStatus]}" میں تبدیل ہو گئی`
+      );
+    }
   };
+
+  const handleMarkAsRead = (notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, read: true }
+          : notification
+      )
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, read: true }))
+    );
+  };
+
+  const unreadNotifications = notifications.filter(n => !n.read).length;
 
   // Statistics for charts
   const statusData = [
@@ -126,6 +211,8 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
         userName={userName} 
         onLogout={onLogout}
         onRoleSwitch={onRoleSwitch}
+        notifications={unreadNotifications}
+        onNotificationClick={() => setIsNotificationPanelOpen(true)}
       />
       
       <div className="container mx-auto px-4 py-6">
@@ -222,19 +309,30 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
         <TaskBoard
           tasks={tasks}
           userRole={userRole}
-          onAddTask={handleAddTask}
-          onEditTask={handleEditTask}
-          onDeleteTask={handleDeleteTask}
-          onStatusChange={handleStatusChange}
+          onAddTask={userRole === 'admin' ? handleAddTask : undefined}
+          onEditTask={userRole === 'admin' ? handleEditTask : undefined}
+          onDeleteTask={userRole === 'admin' ? handleDeleteTask : undefined}
+          onStatusChange={userRole === 'admin' ? handleStatusChange : undefined}
         />
 
-        {/* Task Modal */}
-        <TaskModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveTask}
-          task={currentTask}
-          mode={modalMode}
+        {/* Task Modal - Only for Admin */}
+        {userRole === 'admin' && (
+          <TaskModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveTask}
+            task={currentTask}
+            mode={modalMode}
+          />
+        )}
+
+        {/* Notification Panel */}
+        <NotificationPanel
+          notifications={notifications}
+          isOpen={isNotificationPanelOpen}
+          onClose={() => setIsNotificationPanelOpen(false)}
+          onMarkAsRead={handleMarkAsRead}
+          onMarkAllAsRead={handleMarkAllAsRead}
         />
       </div>
     </div>

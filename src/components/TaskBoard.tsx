@@ -39,7 +39,8 @@ const TaskBoard = ({ tasks, userRole, onAddTask, onEditTask, onDeleteTask, onSta
                 {getTasksByStatus(column.id as Task['status']).length}
               </span>
             </div>
-            {userRole === 'admin' && column.id === 'todo' && (
+            {/* Only show Add Task button for Admin and only in todo column */}
+            {userRole === 'admin' && column.id === 'todo' && onAddTask && (
               <Button
                 onClick={onAddTask}
                 className="w-full mt-2"
@@ -57,9 +58,9 @@ const TaskBoard = ({ tasks, userRole, onAddTask, onEditTask, onDeleteTask, onSta
                 key={task.id}
                 task={task}
                 userRole={userRole}
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-                onStatusChange={onStatusChange}
+                onEdit={userRole === 'admin' ? onEditTask : undefined}
+                onDelete={userRole === 'admin' ? onDeleteTask : undefined}
+                onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
               />
             ))}
           </CardContent>

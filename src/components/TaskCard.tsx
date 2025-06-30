@@ -84,7 +84,8 @@ const TaskCard = ({ task, userRole, onEdit, onDelete, onStatusChange }: TaskCard
         <div className="text-xs text-gray-500 mb-3" dir="rtl">
           <div>آخری تاریخ: {new Date(task.dueDate).toLocaleDateString('ur-PK')}</div>
         </div>
-        {onStatusChange && (
+        {/* Only show status change buttons for admins */}
+        {userRole === 'admin' && onStatusChange && (
           <div className="flex flex-wrap gap-1">
             {(['todo', 'inprogress', 'review', 'done'] as const).map((status) => (
               <Button
@@ -98,6 +99,14 @@ const TaskCard = ({ task, userRole, onEdit, onDelete, onStatusChange }: TaskCard
                 {statusLabels[status]}
               </Button>
             ))}
+          </div>
+        )}
+        {/* For members, just show current status */}
+        {userRole === 'member' && (
+          <div className="mt-2">
+            <Badge variant="secondary" dir="rtl">
+              حالت: {statusLabels[task.status]}
+            </Badge>
           </div>
         )}
       </CardContent>
