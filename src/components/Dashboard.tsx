@@ -25,7 +25,9 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       priority: 'high',
       assignedTo: 'احمد علی',
       createdAt: '2024-01-01',
-      dueDate: '2024-01-15'
+      dueDate: '2024-01-15',
+      progress: 0,
+      memberNotes: ''
     },
     {
       id: '2',
@@ -35,7 +37,9 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       priority: 'medium',
       assignedTo: 'فاطمہ خان',
       createdAt: '2024-01-02',
-      dueDate: '2024-01-20'
+      dueDate: '2024-01-20',
+      progress: 30,
+      memberNotes: 'ڈیٹابیس کی بنیادی ساخت مکمل ہو گئی'
     },
     {
       id: '3',
@@ -45,7 +49,9 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       priority: 'high',
       assignedTo: 'محمد حسن',
       createdAt: '2024-01-03',
-      dueDate: '2024-01-18'
+      dueDate: '2024-01-18',
+      progress: 80,
+      memberNotes: 'اہم bugs حل ہو گئے، فائنل ٹیسٹنگ باقی ہے'
     },
     {
       id: '4',
@@ -55,7 +61,9 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       priority: 'low',
       assignedTo: 'عائشہ سلیم',
       createdAt: '2024-01-04',
-      dueDate: '2024-01-10'
+      dueDate: '2024-01-10',
+      progress: 100,
+      memberNotes: 'دستاویزات مکمل اور جمع کر دیے گئے'
     }
   ]);
 
@@ -80,7 +88,7 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
     
     setNotifications(prev => [newNotification, ...prev]);
     
-    // Show toast for real-time notification
+    // Show toast for real-time notification to members
     if (userRole === 'member') {
       toast({
         title: title,
@@ -89,6 +97,7 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
     }
   };
 
+  // Admin-only functions
   const handleAddTask = () => {
     if (userRole !== 'admin') return;
     setCurrentTask(null);
@@ -124,7 +133,9 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       const newTask: Task = {
         ...taskData,
         id: Date.now().toString(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        progress: 0,
+        memberNotes: ''
       };
       setTasks([...tasks, newTask]);
       createNotification(
@@ -141,7 +152,7 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       createNotification(
         'task_updated',
         'ٹاسک اپڈیٹ ہوا',
-        `"${taskData.title}" ٹاسک میں تبدیلی کی گئی ہے`
+        `"${taskData.title}" ٹاسک میں منتظم کی جانب سے تبدیلی کی گئی ہے`
       );
     }
   };
@@ -167,7 +178,25 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       createNotification(
         'task_updated',
         'ٹاسک کی حالت تبدیل ہوئی',
-        `"${task.title}" کی حالت "${statusLabels[newStatus]}" میں تبدیل ہو گئی`
+        `"${task.title}" کی حالت منتظم کی جانب سے "${statusLabels[newStatus]}" میں تبدیل ہو گئی`
+      );
+    }
+  };
+
+  // Member function to update their own task progress
+  const handleMemberTaskUpdate = (taskId: string, progress: number, memberNotes: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.assignedTo === userName) {
+      setTasks(tasks.map(t => 
+        t.id === taskId 
+          ? { ...t, progress, memberNotes }
+          : t
+      ));
+      
+      createNotification(
+        'task_updated',
+        'ٹاسک کی پیش قدمی اپڈیٹ ہوئی',
+        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے`
       );
     }
   };
@@ -210,7 +239,7 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
         userRole={userRole} 
         userName={userName} 
         onLogout={onLogout}
-        onRoleSwitch={onRoleSwitch}
+        onRoleSwitch={userRole === 'admin' ? onRoleSwitch : undefined}
         notifications={unreadNotifications}
         onNotificationClick={() => setIsNotificationPanelOpen(true)}
       />
@@ -248,11 +277,16 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">
+                {userRole === 'member' ? 'میرے ٹاسکس' : 'باقی'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {tasks.filter(t => t.status === 'todo').length}
+                {userRole === 'member' 
+                  ? tasks.filter(t => t.assignedTo === userName).length
+                  : tasks.filter(t => t.status === 'todo').length
+                }
               </div>
             </CardContent>
           </Card>
@@ -307,12 +341,14 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
 
         {/* Task Board */}
         <TaskBoard
-          tasks={tasks}
+          tasks={userRole === 'member' ? tasks : tasks}
           userRole={userRole}
+          userName={userName}
           onAddTask={userRole === 'admin' ? handleAddTask : undefined}
           onEditTask={userRole === 'admin' ? handleEditTask : undefined}
           onDeleteTask={userRole === 'admin' ? handleDeleteTask : undefined}
           onStatusChange={userRole === 'admin' ? handleStatusChange : undefined}
+          onMemberTaskUpdate={userRole === 'member' ? handleMemberTaskUpdate : undefined}
         />
 
         {/* Task Modal - Only for Admin */}

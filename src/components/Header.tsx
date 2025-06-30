@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, Users, Bell } from 'lucide-react';
+import { LogOut, Users, Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface HeaderProps {
@@ -53,7 +53,9 @@ const Header = ({ userRole, userName, onLogout, onRoleSwitch, notifications = 0,
             <span className="px-3 py-1 bg-white/20 rounded-full text-xs" dir="rtl">
               {userRole === 'admin' ? 'منتظم' : 'رکن'}
             </span>
-            {onRoleSwitch && (
+            
+            {/* Only show role switch for admin */}
+            {userRole === 'admin' && onRoleSwitch && (
               <Button
                 variant="outline"
                 size="sm"
@@ -61,9 +63,10 @@ const Header = ({ userRole, userName, onLogout, onRoleSwitch, notifications = 0,
                 className="text-white border-white/30 hover:bg-white/10"
               >
                 <Users className="h-4 w-4 mr-2" />
-                Switch Role
+                <span dir="rtl">رکن کی نظر</span>
               </Button>
             )}
+            
             <Button
               variant="outline"
               size="sm"

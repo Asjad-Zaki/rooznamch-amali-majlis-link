@@ -8,13 +8,24 @@ import { Plus } from 'lucide-react';
 interface TaskBoardProps {
   tasks: Task[];
   userRole: 'admin' | 'member';
+  userName: string;
   onAddTask?: () => void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (taskId: string) => void;
   onStatusChange?: (taskId: string, newStatus: Task['status']) => void;
+  onMemberTaskUpdate?: (taskId: string, progress: number, memberNotes: string) => void;
 }
 
-const TaskBoard = ({ tasks, userRole, onAddTask, onEditTask, onDeleteTask, onStatusChange }: TaskBoardProps) => {
+const TaskBoard = ({ 
+  tasks, 
+  userRole, 
+  userName, 
+  onAddTask, 
+  onEditTask, 
+  onDeleteTask, 
+  onStatusChange, 
+  onMemberTaskUpdate 
+}: TaskBoardProps) => {
   const statusColumns = [
     { id: 'todo', title: 'کرنا ہے', bgColor: 'bg-gray-50' },
     { id: 'inprogress', title: 'جاری', bgColor: 'bg-blue-50' },
@@ -23,7 +34,14 @@ const TaskBoard = ({ tasks, userRole, onAddTask, onEditTask, onDeleteTask, onSta
   ];
 
   const getTasksByStatus = (status: Task['status']) => {
-    return tasks.filter(task => task.status === status);
+    let filteredTasks = tasks.filter(task => task.status === status);
+    
+    // For members, show only their assigned tasks
+    if (userRole === 'member') {
+      filteredTasks = filteredTasks.filter(task => task.assignedTo === userName);
+    }
+    
+    return filteredTasks;
   };
 
   return (
@@ -58,9 +76,11 @@ const TaskBoard = ({ tasks, userRole, onAddTask, onEditTask, onDeleteTask, onSta
                 key={task.id}
                 task={task}
                 userRole={userRole}
+                userName={userName}
                 onEdit={userRole === 'admin' ? onEditTask : undefined}
                 onDelete={userRole === 'admin' ? onDeleteTask : undefined}
                 onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
+                onMemberTaskUpdate={onMemberTaskUpdate}
               />
             ))}
           </CardContent>
