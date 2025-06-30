@@ -38,7 +38,9 @@ const TaskBoard = ({
     
     // For members, show only their assigned tasks
     if (userRole === 'member') {
-      filteredTasks = filteredTasks.filter(task => task.assignedTo === userName);
+      filteredTasks = filteredTasks.filter(task => 
+        task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
+      );
     }
     
     return filteredTasks;
@@ -71,18 +73,25 @@ const TaskBoard = ({
             )}
           </CardHeader>
           <CardContent className="max-h-96 overflow-y-auto">
-            {getTasksByStatus(column.id as Task['status']).map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                userRole={userRole}
-                userName={userName}
-                onEdit={userRole === 'admin' ? onEditTask : undefined}
-                onDelete={userRole === 'admin' ? onDeleteTask : undefined}
-                onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
-                onMemberTaskUpdate={onMemberTaskUpdate}
-              />
-            ))}
+            <div className="space-y-3">
+              {getTasksByStatus(column.id as Task['status']).map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  userRole={userRole}
+                  userName={userName}
+                  onEdit={userRole === 'admin' ? onEditTask : undefined}
+                  onDelete={userRole === 'admin' ? onDeleteTask : undefined}
+                  onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
+                  onMemberTaskUpdate={onMemberTaskUpdate}
+                />
+              ))}
+              {getTasksByStatus(column.id as Task['status']).length === 0 && (
+                <div className="text-center text-gray-500 py-8" dir="rtl">
+                  کوئی ٹاسک نہیں
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}

@@ -1,21 +1,27 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
 import TaskModal from './TaskModal';
 import NotificationPanel, { Notification } from './NotificationPanel';
+import UserManagement, { User } from './UserManagement';
 import { Task } from './TaskCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
   userName: string;
+  userId: string;
   onLogout: () => void;
   onRoleSwitch?: () => void;
+  users: User[];
+  onUpdateUsers: (users: User[]) => void;
 }
 
-const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProps) => {
+const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, onUpdateUsers }: DashboardProps) => {
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
@@ -88,13 +94,11 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
     
     setNotifications(prev => [newNotification, ...prev]);
     
-    // Show toast for real-time notification to members
-    if (userRole === 'member') {
-      toast({
-        title: title,
-        description: message,
-      });
-    }
+    // Show toast notification for real-time updates
+    toast({
+      title: title,
+      description: message,
+    });
   };
 
   // Admin-only functions
@@ -133,9 +137,7 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       const newTask: Task = {
         ...taskData,
         id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        progress: 0,
-        memberNotes: ''
+        createdAt: new Date().toISOString()
       };
       setTasks([...tasks, newTask]);
       createNotification(
@@ -201,6 +203,55 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
     }
   };
 
+  // User management functions
+  const handleAddUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
+    const newUser: User = {
+      ...userData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    onUpdateUsers([...users, newUser]);
+    createNotification(
+      'task_created',
+      'نیا صارف شامل کیا گیا',
+      `${newUser.name} (${newUser.email}) کو سسٹم میں شامل کیا گیا ہے`
+    );
+  };
+
+  const handleEditUser = (user: User) => {
+    onUpdateUsers(users.map(u => u.id === user.id ? user : u));
+    createNotification(
+      'task_updated',
+      'صارف کی معلومات اپڈیٹ ہوئیں',
+      `${user.name} کی معلومات میں تبدیلی کی گئی ہے`
+    );
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      onUpdateUsers(users.filter(u => u.id !== userId));
+      createNotification(
+        'task_deleted',
+        'صارف کو حذف کر دیا گیا',
+        `${user.name} کو سسٹم سے حذف کر دیا گیا ہے`
+      );
+    }
+  };
+
+  const handleToggleUserStatus = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      const updatedUser = { ...user, isActive: !user.isActive };
+      onUpdateUsers(users.map(u => u.id === userId ? updatedUser : u));
+      createNotification(
+        'task_updated',
+        'صارف کی حالت تبدیل ہوئی',
+        `${user.name} کو ${updatedUser.isActive ? 'فعال' : 'غیر فعال'} کر دیا گیا ہے`
+      );
+    }
+  };
+
   const handleMarkAsRead = (notificationId: string) => {
     setNotifications(prev => 
       prev.map(notification => 
@@ -245,111 +296,179 @@ const Dashboard = ({ userRole, userName, onLogout, onRoleSwitch }: DashboardProp
       />
       
       <div className="container mx-auto px-4 py-6">
-        {/* Statistics Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">کل ٹاسکس</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tasks.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {tasks.filter(t => t.status === 'done').length}
+        {userRole === 'admin' ? (
+          <Tabs defaultValue="tasks" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="tasks" dir="rtl">ٹاسکس</TabsTrigger>
+              <TabsTrigger value="users" dir="rtl">صارفین</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="tasks" className="space-y-6">
+              {/* Statistics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">کل ٹاسکس</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{tasks.length}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {tasks.filter(t => t.status === 'done').length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {tasks.filter(t => t.status === 'inprogress').length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {tasks.filter(t => t.status === 'todo').length}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {tasks.filter(t => t.status === 'inprogress').length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">
-                {userRole === 'member' ? 'میرے ٹاسکس' : 'باقی'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {userRole === 'member' 
-                  ? tasks.filter(t => t.assignedTo === userName).length
-                  : tasks.filter(t => t.status === 'todo').length
-                }
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Charts Section - Only for Admin */}
-        {userRole === 'admin' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle dir="rtl">حالت کے مطابق</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle dir="rtl">ترجیح کے مطابق</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={priorityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle dir="rtl">حالت کے مطابق</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={statusData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle dir="rtl">ترجیح کے مطابق</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={priorityData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Task Board */}
+              <TaskBoard
+                tasks={tasks}
+                userRole={userRole}
+                userName={userName}
+                onAddTask={handleAddTask}
+                onEditTask={handleEditTask}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onMemberTaskUpdate={handleMemberTaskUpdate}
+              />
+            </TabsContent>
+            
+            <TabsContent value="users">
+              <UserManagement
+                users={users}
+                onAddUser={handleAddUser}
+                onEditUser={handleEditUser}
+                onDeleteUser={handleDeleteUser}
+                onToggleUserStatus={handleToggleUserStatus}
+              />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="space-y-6">
+            {/* Member Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">میرے ٹاسکس</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tasks.filter(t => t.assignedTo === userName).length}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {tasks.filter(t => t.assignedTo === userName && t.status === 'done').length}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {tasks.filter(t => t.assignedTo === userName && t.status === 'inprogress').length}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {tasks.filter(t => t.assignedTo === userName && t.status === 'todo').length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Task Board for Members */}
+            <TaskBoard
+              tasks={tasks}
+              userRole={userRole}
+              userName={userName}
+              onMemberTaskUpdate={handleMemberTaskUpdate}
+            />
           </div>
         )}
-
-        {/* Task Board */}
-        <TaskBoard
-          tasks={userRole === 'member' ? tasks : tasks}
-          userRole={userRole}
-          userName={userName}
-          onAddTask={userRole === 'admin' ? handleAddTask : undefined}
-          onEditTask={userRole === 'admin' ? handleEditTask : undefined}
-          onDeleteTask={userRole === 'admin' ? handleDeleteTask : undefined}
-          onStatusChange={userRole === 'admin' ? handleStatusChange : undefined}
-          onMemberTaskUpdate={userRole === 'member' ? handleMemberTaskUpdate : undefined}
-        />
 
         {/* Task Modal - Only for Admin */}
         {userRole === 'admin' && (
