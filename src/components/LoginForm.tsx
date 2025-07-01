@@ -62,7 +62,7 @@ const LoginForm = ({
           <CardTitle className="text-xl sm:text-2xl font-bold text-center" dir="rtl">
             مجلس دعوۃ الحق
           </CardTitle>
-          <p dir="rtl" className="text-gray-600 text-center text-sm sm:text-base mx-0 my-[17px]">ٹاسک منیجمنٹ سسٹم</p>
+          <p dir="rtl" className="text-gray-600 text-center text-sm sm:text-base mx-0 my-[17px] px-[7px]">ٹاسک منیجمنٹ سسٹم</p>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="member" className="w-full">
