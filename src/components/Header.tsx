@@ -39,7 +39,7 @@ const Header = ({
               </Button>
             </div>
             
-            <span className="text-sm" dir="rtl">خوش آمدید، {userName}</span>
+            
             <span className="px-3 py-1 bg-white/20 rounded-full text-xs" dir="rtl">
               {userRole === 'admin' ? 'منتظم' : 'رکن'}
             </span>
