@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TaskCard, { Task } from './TaskCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,10 +37,10 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    // For members, show only their assigned tasks
+    // For members, show only their assigned tasks (exact name match)
     if (userRole === 'member') {
       filteredTasks = filteredTasks.filter(task => 
-        task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
+        task.assignedTo === userName
       );
     }
     
@@ -50,6 +49,7 @@ const TaskBoard = ({
 
   console.log('TaskBoard - Current tasks:', tasks);
   console.log('TaskBoard - UserRole:', userRole, 'UserName:', userName);
+  console.log('TaskBoard - All tasks assigned to members:', tasks.map(t => ({ title: t.title, assignedTo: t.assignedTo })));
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">

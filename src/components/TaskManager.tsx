@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import TaskModal from './TaskModal';
 import { Task } from './TaskCard';
@@ -147,7 +146,7 @@ const TaskManager = ({
       createNotification(
         'task_updated',
         'رکن کی جانب سے ٹاسک اپڈیٹ',
-        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے - ${memberNotes}`
+        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے`
       );
     }
   };
