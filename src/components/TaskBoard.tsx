@@ -38,7 +38,7 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    // For members, show only their assigned tasks (by name, not who created them)
+    // For members, show only their assigned tasks
     if (userRole === 'member') {
       filteredTasks = filteredTasks.filter(task => 
         task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
@@ -48,56 +48,64 @@ const TaskBoard = ({
     return filteredTasks;
   };
 
+  console.log('TaskBoard - Current tasks:', tasks);
+  console.log('TaskBoard - UserRole:', userRole, 'UserName:', userName);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">
-      {statusColumns.map((column) => (
-        <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">
-                {column.title}
-              </CardTitle>
-              <span className="bg-white px-2 py-1 rounded-full text-xs sm:text-sm font-medium">
-                {getTasksByStatus(column.id as Task['status']).length}
-              </span>
-            </div>
-            {/* Only show Add Task button for Admin and only in todo column */}
-            {userRole === 'admin' && column.id === 'todo' && onAddTask && (
-              <Button
-                onClick={onAddTask}
-                className="w-full mt-2 text-sm"
-                variant="outline"
-                dir="rtl"
-              >
-                <Plus className="h-4 w-4 ml-2" />
-                نیا ٹاسک
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="max-h-96 overflow-y-auto">
-            <div className="space-y-3">
-              {getTasksByStatus(column.id as Task['status']).map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  userRole={userRole}
-                  userName={userName}
-                  userId={userId}
-                  onEdit={userRole === 'admin' ? onEditTask : undefined}
-                  onDelete={userRole === 'admin' ? onDeleteTask : undefined}
-                  onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
-                  onMemberTaskUpdate={onMemberTaskUpdate}
-                />
-              ))}
-              {getTasksByStatus(column.id as Task['status']).length === 0 && (
-                <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
-                  کوئی ٹاسک نہیں
-                </div>
+      {statusColumns.map((column) => {
+        const columnTasks = getTasksByStatus(column.id as Task['status']);
+        console.log(`TaskBoard - ${column.title} tasks:`, columnTasks);
+        
+        return (
+          <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">
+                  {column.title}
+                </CardTitle>
+                <span className="bg-white px-2 py-1 rounded-full text-xs sm:text-sm font-medium">
+                  {columnTasks.length}
+                </span>
+              </div>
+              {/* Only show Add Task button for Admin and only in todo column */}
+              {userRole === 'admin' && column.id === 'todo' && onAddTask && (
+                <Button
+                  onClick={onAddTask}
+                  className="w-full mt-2 text-sm"
+                  variant="outline"
+                  dir="rtl"
+                >
+                  <Plus className="h-4 w-4 ml-2" />
+                  نیا ٹاسک
+                </Button>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardHeader>
+            <CardContent className="max-h-96 overflow-y-auto">
+              <div className="space-y-3">
+                {columnTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    userRole={userRole}
+                    userName={userName}
+                    userId={userId}
+                    onEdit={userRole === 'admin' ? onEditTask : undefined}
+                    onDelete={userRole === 'admin' ? onDeleteTask : undefined}
+                    onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
+                    onMemberTaskUpdate={onMemberTaskUpdate}
+                  />
+                ))}
+                {columnTasks.length === 0 && (
+                  <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
+                    کوئی ٹاسک نہیں
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

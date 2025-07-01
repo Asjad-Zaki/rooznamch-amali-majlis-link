@@ -10,6 +10,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
+  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // New state for view mode
 
   // Updated demo users with secret numbers
   const [users, setUsers] = useState<User[]>([
@@ -72,6 +73,7 @@ const Index = () => {
     setUserRole(role);
     setUserName(name);
     setUserId(id);
+    setViewMode(role); // Set initial view mode to user's role
     setIsLoggedIn(true);
   };
 
@@ -80,10 +82,14 @@ const Index = () => {
     setUserRole('member');
     setUserName('');
     setUserId('');
+    setViewMode('member');
   };
 
   const handleRoleSwitch = () => {
-    setUserRole(userRole === 'admin' ? 'member' : 'admin');
+    // Only admin can switch views
+    if (userRole === 'admin') {
+      setViewMode(viewMode === 'admin' ? 'member' : 'admin');
+    }
   };
 
   if (!isLoggedIn) {
@@ -92,15 +98,17 @@ const Index = () => {
 
   return (
     <Dashboard 
-      userRole={userRole}
+      userRole={viewMode} // Pass view mode as userRole for UI
       userName={userName}
       userId={userId}
       onLogout={handleLogout}
-      onRoleSwitch={handleRoleSwitch}
+      onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
       users={users}
       onUpdateUsers={setUsers}
       notifications={notifications}
       onUpdateNotifications={setNotifications}
+      viewMode={viewMode} // Pass view mode separately
+      actualRole={userRole} // Pass actual role for permissions
     />
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
 import TaskModal from './TaskModal';
@@ -7,7 +7,8 @@ import UserManagement, { User } from './UserManagement';
 import DashboardStats from './DashboardStats';
 import DashboardCharts from './DashboardCharts';
 import TaskManager from './TaskManager';
-import NotificationHandler from './NotificationHandler';
+import NotificationPanel from './NotificationPanel';
+import { useNotificationHandler } from './NotificationHandler';
 import { Task } from './TaskCard';
 import { Notification } from './NotificationPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,8 @@ interface DashboardProps {
   onUpdateUsers: (users: User[]) => void;
   notifications: Notification[];
   onUpdateNotifications: (notifications: Notification[]) => void;
+  viewMode?: 'admin' | 'member'; // New prop for view mode
+  actualRole?: 'admin' | 'member'; // New prop to track actual role
 }
 
 const Dashboard = ({ 
@@ -33,7 +36,9 @@ const Dashboard = ({
   users, 
   onUpdateUsers,
   notifications,
-  onUpdateNotifications
+  onUpdateNotifications,
+  viewMode = userRole,
+  actualRole = userRole
 }: DashboardProps) => {
   const [tasks, setTasks] = useState<Task[]>([
     {
@@ -86,21 +91,28 @@ const Dashboard = ({
     }
   ]);
 
+  // Use notification handler hook
+  const notificationHandler = useNotificationHandler({
+    notifications,
+    onUpdateNotifications
+  });
+
   // Initialize task manager
   const taskManager = TaskManager({
     tasks,
     onUpdateTasks: setTasks,
-    userRole,
+    userRole: actualRole, // Use actual role for permissions
     userName,
     notifications,
     onUpdateNotifications
   });
 
-  // Initialize notification handler
-  const notificationHandler = NotificationHandler({
-    notifications,
-    onUpdateNotifications
-  });
+  // Log for debugging
+  useEffect(() => {
+    console.log('Dashboard - Current tasks:', tasks);
+    console.log('Dashboard - ViewMode:', viewMode, 'ActualRole:', actualRole);
+    console.log('Dashboard - Notifications:', notifications);
+  }, [tasks, viewMode, actualRole, notifications]);
 
   // User management functions
   const handleAddUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
@@ -134,16 +146,16 @@ const Dashboard = ({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        userRole={userRole} 
-        userName={userName} 
+        userRole={viewMode} 
+        userName={viewMode === 'member' && actualRole === 'admin' ? `${userName} (مانیٹرنگ موڈ)` : userName}
         onLogout={onLogout}
-        onRoleSwitch={userRole === 'admin' ? onRoleSwitch : undefined}
+        onRoleSwitch={actualRole === 'admin' ? onRoleSwitch : undefined}
         notifications={notificationHandler.unreadNotifications}
         onNotificationClick={() => notificationHandler.setIsNotificationPanelOpen(true)}
       />
       
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        {userRole === 'admin' ? (
+        {viewMode === 'admin' ? (
           <Tabs defaultValue="tasks" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="tasks" dir="rtl" className="text-sm">ٹاسکس</TabsTrigger>
@@ -151,17 +163,17 @@ const Dashboard = ({
             </TabsList>
             
             <TabsContent value="tasks" className="space-y-4 sm:space-y-6">
-              <DashboardStats tasks={tasks} userRole={userRole} userName={userName} />
+              <DashboardStats tasks={tasks} userRole={viewMode} userName={userName} />
               <DashboardCharts tasks={tasks} />
               <TaskBoard
                 tasks={tasks}
-                userRole={userRole}
+                userRole={viewMode}
                 userName={userName}
                 userId={userId}
-                onAddTask={taskManager.handleAddTask}
-                onEditTask={taskManager.handleEditTask}
-                onDeleteTask={taskManager.handleDeleteTask}
-                onStatusChange={taskManager.handleStatusChange}
+                onAddTask={actualRole === 'admin' ? taskManager.handleAddTask : undefined}
+                onEditTask={actualRole === 'admin' ? taskManager.handleEditTask : undefined}
+                onDeleteTask={actualRole === 'admin' ? taskManager.handleDeleteTask : undefined}
+                onStatusChange={actualRole === 'admin' ? taskManager.handleStatusChange : undefined}
                 onMemberTaskUpdate={taskManager.handleMemberTaskUpdate}
               />
             </TabsContent>
@@ -178,10 +190,10 @@ const Dashboard = ({
           </Tabs>
         ) : (
           <div className="space-y-4 sm:space-y-6">
-            <DashboardStats tasks={tasks} userRole={userRole} userName={userName} />
+            <DashboardStats tasks={tasks} userRole={viewMode} userName={userName} />
             <TaskBoard
               tasks={tasks}
-              userRole={userRole}
+              userRole={viewMode}
               userName={userName}
               userId={userId}
               onMemberTaskUpdate={taskManager.handleMemberTaskUpdate}
@@ -190,7 +202,7 @@ const Dashboard = ({
         )}
 
         {/* Task Modal - Only for Admin */}
-        {userRole === 'admin' && (
+        {actualRole === 'admin' && (
           <TaskModal
             isOpen={taskManager.isModalOpen}
             onClose={() => taskManager.setIsModalOpen(false)}
@@ -201,7 +213,13 @@ const Dashboard = ({
         )}
 
         {/* Notification Panel */}
-        <notificationHandler.NotificationPanel />
+        <NotificationPanel
+          notifications={notifications}
+          isOpen={notificationHandler.isNotificationPanelOpen}
+          onClose={() => notificationHandler.setIsNotificationPanelOpen(false)}
+          onMarkAsRead={notificationHandler.handleMarkAsRead}
+          onMarkAllAsRead={notificationHandler.handleMarkAllAsRead}
+        />
       </div>
     </div>
   );

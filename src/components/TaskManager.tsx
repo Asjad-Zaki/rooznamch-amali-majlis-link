@@ -37,6 +37,7 @@ const TaskManager = ({
       read: false
     };
     
+    console.log('Creating notification:', newNotification);
     onUpdateNotifications([newNotification, ...notifications]);
     
     toast({
@@ -82,6 +83,7 @@ const TaskManager = ({
         id: Date.now().toString(),
         createdAt: new Date().toISOString()
       };
+      console.log('Adding new task:', newTask);
       onUpdateTasks([...tasks, newTask]);
       createNotification(
         'task_created',
@@ -89,9 +91,11 @@ const TaskManager = ({
         `"${newTask.title}" نام کا نیا ٹاسک ${newTask.assignedTo} کو تفویض کیا گیا ہے`
       );
     } else if (currentTask) {
+      const updatedTask = { ...currentTask, ...taskData };
+      console.log('Updating task:', updatedTask);
       onUpdateTasks(tasks.map(task => 
         task.id === currentTask.id 
-          ? { ...task, ...taskData }
+          ? updatedTask
           : task
       ));
       createNotification(
@@ -100,6 +104,7 @@ const TaskManager = ({
         `"${taskData.title}" ٹاسک میں منتظم کی جانب سے تبدیلی کی گئی ہے`
       );
     }
+    setIsModalOpen(false);
   };
 
   const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
@@ -107,9 +112,10 @@ const TaskManager = ({
     
     const task = tasks.find(t => t.id === taskId);
     if (task) {
+      const updatedTask = { ...task, status: newStatus };
       onUpdateTasks(tasks.map(task => 
         task.id === taskId 
-          ? { ...task, status: newStatus }
+          ? updatedTask
           : task
       ));
       
@@ -131,9 +137,10 @@ const TaskManager = ({
   const handleMemberTaskUpdate = (taskId: string, progress: number, memberNotes: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task && task.assignedTo === userName) {
+      const updatedTask = { ...task, progress, memberNotes };
       onUpdateTasks(tasks.map(t => 
         t.id === taskId 
-          ? { ...t, progress, memberNotes }
+          ? updatedTask
           : t
       ));
       
