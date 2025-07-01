@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
@@ -18,9 +19,21 @@ interface DashboardProps {
   onRoleSwitch?: () => void;
   users: User[];
   onUpdateUsers: (users: User[]) => void;
+  notifications: Notification[];
+  onUpdateNotifications: (notifications: Notification[]) => void;
 }
 
-const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, onUpdateUsers }: DashboardProps) => {
+const Dashboard = ({ 
+  userRole, 
+  userName, 
+  userId, 
+  onLogout, 
+  onRoleSwitch, 
+  users, 
+  onUpdateUsers,
+  notifications,
+  onUpdateNotifications
+}: DashboardProps) => {
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
@@ -77,7 +90,6 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
   // Notification system
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const { toast } = useToast();
 
@@ -91,7 +103,7 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
       read: false
     };
     
-    setNotifications(prev => [newNotification, ...prev]);
+    onUpdateNotifications([newNotification, ...notifications]);
     
     // Show toast notification for real-time updates
     toast({
@@ -194,10 +206,11 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
           : t
       ));
       
+      // Create notification for admin when member updates task
       createNotification(
         'task_updated',
-        'ٹاسک کی پیش قدمی اپڈیٹ ہوئی',
-        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے`
+        'رکن کی جانب سے ٹاسک اپڈیٹ',
+        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے - ${memberNotes}`
       );
     }
   };
@@ -252,8 +265,8 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
   };
 
   const handleMarkAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
+    onUpdateNotifications(
+      notifications.map(notification => 
         notification.id === notificationId 
           ? { ...notification, read: true }
           : notification
@@ -262,8 +275,8 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
   };
 
   const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
+    onUpdateNotifications(
+      notifications.map(notification => ({ ...notification, read: true }))
     );
   };
 

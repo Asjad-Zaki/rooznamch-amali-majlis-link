@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
 import { User } from '@/components/UserManagement';
+import { Notification } from '@/components/NotificationPanel';
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -64,6 +65,9 @@ const Index = () => {
     }
   ]);
 
+  // Shared notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
   const handleLogin = (role: 'admin' | 'member', name: string, id: string) => {
     setUserRole(role);
     setUserName(name);
@@ -95,6 +99,8 @@ const Index = () => {
       onRoleSwitch={handleRoleSwitch}
       users={users}
       onUpdateUsers={setUsers}
+      notifications={notifications}
+      onUpdateNotifications={setNotifications}
     />
   );
 };

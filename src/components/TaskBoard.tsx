@@ -38,7 +38,7 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    // For members, show only their assigned tasks (match by name)
+    // For members, show only their assigned tasks (by name, not who created them)
     if (userRole === 'member') {
       filteredTasks = filteredTasks.filter(task => 
         task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
