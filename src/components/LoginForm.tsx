@@ -54,7 +54,7 @@ const LoginForm = ({
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md bg-inherit">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4 px-0 py-0 mx-0 my-0">
             <img src="/lovable-uploads/e1652408-702e-47c9-834c-bafadef748e9.png" alt="Majlis e Dawatul Haq Logo" className="h-16 w-16 rounded-full" />
