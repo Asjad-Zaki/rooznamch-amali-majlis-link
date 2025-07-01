@@ -25,13 +25,14 @@ interface TaskCardProps {
   task: Task;
   userRole: 'admin' | 'member';
   userName: string;
+  userId?: string;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, newStatus: Task['status']) => void;
   onMemberTaskUpdate?: (taskId: string, progress: number, memberNotes: string) => void;
 }
 
-const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, onMemberTaskUpdate }: TaskCardProps) => {
+const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatusChange, onMemberTaskUpdate }: TaskCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [progress, setProgress] = useState(task.progress);
   const [memberNotes, setMemberNotes] = useState(task.memberNotes);
@@ -67,26 +68,26 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
   return (
     <Card className="mb-4 hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-sm font-medium" dir="rtl">{task.title}</CardTitle>
-          <div className="flex space-x-1">
+        <div className="flex justify-between items-start gap-2">
+          <CardTitle className="text-xs sm:text-sm font-medium flex-1" dir="rtl">{task.title}</CardTitle>
+          <div className="flex gap-1">
             {userRole === 'admin' && (
               <>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onEdit?.(task)}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                 >
-                  <Settings className="h-3 w-3" />
+                  <Settings className="h-2 w-2 sm:h-3 sm:w-3" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onDelete?.(task.id)}
-                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                  className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-red-500 hover:text-red-700"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-2 w-2 sm:h-3 sm:w-3" />
                 </Button>
               </>
             )}
@@ -95,22 +96,22 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700"
+                className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-blue-500 hover:text-blue-700"
               >
-                <Edit3 className="h-3 w-3" />
+                <Edit3 className="h-2 w-2 sm:h-3 sm:w-3" />
               </Button>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-gray-600 mb-3" dir="rtl">{task.description}</p>
+        <p className="text-xs sm:text-sm text-gray-600 mb-3" dir="rtl">{task.description}</p>
         
-        <div className="flex flex-wrap gap-2 mb-3">
-          <Badge className={priorityColors[task.priority]} dir="rtl">
+        <div className="flex flex-wrap gap-1 sm:gap-2 mb-3">
+          <Badge className={`${priorityColors[task.priority]} text-xs`} dir="rtl">
             ترجیح: {priorityLabels[task.priority]}
           </Badge>
-          <Badge variant="outline" dir="rtl">
+          <Badge variant="outline" className="text-xs" dir="rtl">
             ذمہ دار: {task.assignedTo}
           </Badge>
         </div>
@@ -131,7 +132,7 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
 
         {/* Member Notes */}
         {task.memberNotes && (
-          <div className="mb-3 p-2 bg-blue-50 rounded text-sm" dir="rtl">
+          <div className="mb-3 p-2 bg-blue-50 rounded text-xs sm:text-sm" dir="rtl">
             <strong>رکن کی رپورٹ:</strong> {task.memberNotes}
           </div>
         )}
@@ -141,7 +142,7 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
           <div className="mb-3 p-3 border rounded-lg bg-gray-50">
             <div className="space-y-3">
               <div>
-                <Label htmlFor="progress" dir="rtl" className="text-right block">
+                <Label htmlFor="progress" dir="rtl" className="text-right block text-xs sm:text-sm">
                   پیش قدمی (%)
                 </Label>
                 <Input
@@ -151,25 +152,25 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
                   max="100"
                   value={progress}
                   onChange={(e) => setProgress(Number(e.target.value))}
-                  className="text-right"
+                  className="text-right text-sm"
                   dir="rtl"
                 />
               </div>
               <div>
-                <Label htmlFor="notes" dir="rtl" className="text-right block">
+                <Label htmlFor="notes" dir="rtl" className="text-right block text-xs sm:text-sm">
                   آپ کی رپورٹ
                 </Label>
                 <Textarea
                   id="notes"
                   value={memberNotes}
                   onChange={(e) => setMemberNotes(e.target.value)}
-                  className="text-right"
+                  className="text-right text-sm min-h-[60px]"
                   dir="rtl"
                   placeholder="اپنی پیش قدمی کی تفصیل لکھیں"
                 />
               </div>
-              <div className="flex space-x-2">
-                <Button size="sm" onClick={handleMemberUpdate} dir="rtl">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button size="sm" onClick={handleMemberUpdate} dir="rtl" className="text-xs">
                   محفوظ کریں
                 </Button>
                 <Button 
@@ -177,6 +178,7 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
                   variant="outline" 
                   onClick={() => setIsEditing(false)}
                   dir="rtl"
+                  className="text-xs"
                 >
                   منسوخ
                 </Button>
@@ -210,7 +212,7 @@ const TaskCard = ({ task, userRole, userName, onEdit, onDelete, onStatusChange, 
         {/* For members, just show current status */}
         {userRole === 'member' && (
           <div className="mt-2">
-            <Badge variant="secondary" dir="rtl">
+            <Badge variant="secondary" dir="rtl" className="text-xs">
               حالت: {statusLabels[task.status]}
             </Badge>
           </div>

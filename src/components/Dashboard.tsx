@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
@@ -295,51 +294,51 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
         onNotificationClick={() => setIsNotificationPanelOpen(true)}
       />
       
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {userRole === 'admin' ? (
           <Tabs defaultValue="tasks" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="tasks" dir="rtl">ٹاسکس</TabsTrigger>
-              <TabsTrigger value="users" dir="rtl">صارفین</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="tasks" dir="rtl" className="text-sm">ٹاسکس</TabsTrigger>
+              <TabsTrigger value="users" dir="rtl" className="text-sm">صارفین</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="tasks" className="space-y-6">
+            <TabsContent value="tasks" className="space-y-4 sm:space-y-6">
               {/* Statistics Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">کل ٹاسکس</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">کل ٹاسکس</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{tasks.length}</div>
+                    <div className="text-lg sm:text-2xl font-bold">{tasks.length}</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-lg sm:text-2xl font-bold text-green-600">
                       {tasks.filter(t => t.status === 'done').length}
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-lg sm:text-2xl font-bold text-blue-600">
                       {tasks.filter(t => t.status === 'inprogress').length}
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-600">
+                    <div className="text-lg sm:text-2xl font-bold text-orange-600">
                       {tasks.filter(t => t.status === 'todo').length}
                     </div>
                   </CardContent>
@@ -347,19 +346,19 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
               </div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle dir="rtl">حالت کے مطابق</CardTitle>
+                    <CardTitle dir="rtl" className="text-sm sm:text-base">حالت کے مطابق</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ResponsiveContainer width="100%" height={150}>
                       <PieChart>
                         <Pie
                           data={statusData}
                           cx="50%"
                           cy="50%"
-                          outerRadius={80}
+                          outerRadius={60}
                           fill="#8884d8"
                           dataKey="value"
                           label={({ name, value }) => `${name}: ${value}`}
@@ -375,10 +374,10 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
                 </Card>
                 <Card>
                   <CardHeader>
-                    <CardTitle dir="rtl">ترجیح کے مطابق</CardTitle>
+                    <CardTitle dir="rtl" className="text-sm sm:text-base">ترجیح کے مطابق</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ResponsiveContainer width="100%" height={150}>
                       <BarChart data={priorityData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
@@ -396,6 +395,7 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
                 tasks={tasks}
                 userRole={userRole}
                 userName={userName}
+                userId={userId}
                 onAddTask={handleAddTask}
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
@@ -415,45 +415,45 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Member Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">میرے ٹاسکس</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">میرے ٹاسکس</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="text-lg sm:text-2xl font-bold">
                     {tasks.filter(t => t.assignedTo === userName).length}
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">مکمل</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">
                     {tasks.filter(t => t.assignedTo === userName && t.status === 'done').length}
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">جاری</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">
                     {tasks.filter(t => t.assignedTo === userName && t.status === 'inprogress').length}
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600" dir="rtl">باقی</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-lg sm:text-2xl font-bold text-orange-600">
                     {tasks.filter(t => t.assignedTo === userName && t.status === 'todo').length}
                   </div>
                 </CardContent>
@@ -465,6 +465,7 @@ const Dashboard = ({ userRole, userName, userId, onLogout, onRoleSwitch, users, 
               tasks={tasks}
               userRole={userRole}
               userName={userName}
+              userId={userId}
               onMemberTaskUpdate={handleMemberTaskUpdate}
             />
           </div>

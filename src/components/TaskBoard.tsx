@@ -9,6 +9,7 @@ interface TaskBoardProps {
   tasks: Task[];
   userRole: 'admin' | 'member';
   userName: string;
+  userId?: string;
   onAddTask?: () => void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (taskId: string) => void;
@@ -20,6 +21,7 @@ const TaskBoard = ({
   tasks, 
   userRole, 
   userName, 
+  userId,
   onAddTask, 
   onEditTask, 
   onDeleteTask, 
@@ -36,7 +38,7 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    // For members, show only their assigned tasks
+    // For members, show only their assigned tasks (match by name)
     if (userRole === 'member') {
       filteredTasks = filteredTasks.filter(task => 
         task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
@@ -47,15 +49,15 @@ const TaskBoard = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">
       {statusColumns.map((column) => (
         <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
           <CardHeader className="pb-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold" dir="rtl">
+              <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">
                 {column.title}
               </CardTitle>
-              <span className="bg-white px-2 py-1 rounded-full text-sm font-medium">
+              <span className="bg-white px-2 py-1 rounded-full text-xs sm:text-sm font-medium">
                 {getTasksByStatus(column.id as Task['status']).length}
               </span>
             </div>
@@ -63,7 +65,7 @@ const TaskBoard = ({
             {userRole === 'admin' && column.id === 'todo' && onAddTask && (
               <Button
                 onClick={onAddTask}
-                className="w-full mt-2"
+                className="w-full mt-2 text-sm"
                 variant="outline"
                 dir="rtl"
               >
@@ -80,6 +82,7 @@ const TaskBoard = ({
                   task={task}
                   userRole={userRole}
                   userName={userName}
+                  userId={userId}
                   onEdit={userRole === 'admin' ? onEditTask : undefined}
                   onDelete={userRole === 'admin' ? onDeleteTask : undefined}
                   onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
@@ -87,7 +90,7 @@ const TaskBoard = ({
                 />
               ))}
               {getTasksByStatus(column.id as Task['status']).length === 0 && (
-                <div className="text-center text-gray-500 py-8" dir="rtl">
+                <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
                   کوئی ٹاسک نہیں
                 </div>
               )}

@@ -10,7 +10,7 @@ const Index = () => {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
 
-  // Initial demo users
+  // Updated demo users with secret numbers
   const [users, setUsers] = useState<User[]>([
     {
       id: '1',
@@ -18,6 +18,7 @@ const Index = () => {
       email: 'admin@example.com',
       role: 'admin',
       password: 'admin123',
+      secretNumber: '000000',
       createdAt: '2024-01-01',
       isActive: true
     },
@@ -27,6 +28,7 @@ const Index = () => {
       email: 'ahmed@example.com',
       role: 'member',
       password: 'member123',
+      secretNumber: '123456',
       createdAt: '2024-01-01',
       isActive: true
     },
@@ -36,6 +38,7 @@ const Index = () => {
       email: 'fatima@example.com',
       role: 'member',
       password: 'member123',
+      secretNumber: '234567',
       createdAt: '2024-01-01',
       isActive: true
     },
@@ -45,6 +48,7 @@ const Index = () => {
       email: 'hassan@example.com',
       role: 'member',
       password: 'member123',
+      secretNumber: '345678',
       createdAt: '2024-01-01',
       isActive: true
     },
@@ -54,6 +58,7 @@ const Index = () => {
       email: 'aisha@example.com',
       role: 'member',
       password: 'member123',
+      secretNumber: '456789',
       createdAt: '2024-01-01',
       isActive: true
     }

@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trash2, Edit, Plus, Users } from 'lucide-react';
+import { Trash2, Edit, Plus, Users, Key, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 export interface User {
   id: string;
@@ -15,6 +16,7 @@ export interface User {
   email: string;
   role: 'admin' | 'member';
   password: string;
+  secretNumber: string;
   createdAt: string;
   isActive: boolean;
 }
@@ -42,17 +44,34 @@ const UserManagement = ({
     email: '',
     role: 'member' as User['role'],
     password: '',
+    secretNumber: '',
     isActive: true
   });
+  const { toast } = useToast();
+
+  const generateSecretNumber = () => {
+    const secretNumber = Math.floor(100000 + Math.random() * 900000).toString();
+    setFormData({ ...formData, secretNumber });
+  };
+
+  const copySecretNumber = (secretNumber: string) => {
+    navigator.clipboard.writeText(secretNumber);
+    toast({
+      title: "کاپی ہو گیا",
+      description: "خفیہ نمبر کاپی بورڈ میں کاپی ہو گیا ہے",
+    });
+  };
 
   const handleAddUser = () => {
     setCurrentUser(null);
     setModalMode('create');
+    const newSecretNumber = Math.floor(100000 + Math.random() * 900000).toString();
     setFormData({
       name: '',
       email: '',
       role: 'member',
       password: '',
+      secretNumber: newSecretNumber,
       isActive: true
     });
     setIsModalOpen(true);
@@ -66,6 +85,7 @@ const UserManagement = ({
       email: user.email,
       role: user.role,
       password: user.password,
+      secretNumber: user.secretNumber,
       isActive: user.isActive
     });
     setIsModalOpen(true);
@@ -85,65 +105,76 @@ const UserManagement = ({
   const inactiveUsers = users.filter(user => !user.isActive);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-4">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2" dir="rtl">
               <Users className="h-5 w-5" />
               صارف کا انتظام
             </CardTitle>
-            <Button onClick={handleAddUser} dir="rtl">
+            <Button onClick={handleAddUser} dir="rtl" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 ml-2" />
               نیا صارف
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Active Users */}
             <div>
               <h3 className="text-lg font-semibold mb-4" dir="rtl">فعال صارفین</h3>
               <div className="space-y-3">
                 {activeUsers.map((user) => (
                   <Card key={user.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium" dir="rtl">{user.name}</h4>
-                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                            {user.role === 'admin' ? 'منتظم' : 'رکن'}
-                          </Badge>
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-medium" dir="rtl">{user.name}</h4>
+                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                              {user.role === 'admin' ? 'منتظم' : 'رکن'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600" dir="rtl">{user.email}</p>
+                          <div className="flex items-center gap-2">
+                            <Key className="h-3 w-3 text-gray-400" />
+                            <span className="text-sm font-mono">{user.secretNumber}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copySecretNumber(user.secretNumber)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600" dir="rtl">{user.email}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(user.createdAt).toLocaleDateString('ur-PK')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onToggleUserStatus(user.id)}
-                          className="text-orange-600"
-                        >
-                          غیر فعال
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDeleteUser(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onToggleUserStatus(user.id)}
+                            className="text-orange-600"
+                          >
+                            غیر فعال
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDeleteUser(user.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -157,9 +188,9 @@ const UserManagement = ({
               <div className="space-y-3">
                 {inactiveUsers.map((user) => (
                   <Card key={user.id} className="p-4 bg-gray-50">
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <h4 className="font-medium text-gray-600" dir="rtl">{user.name}</h4>
                           <Badge variant="outline">
                             {user.role === 'admin' ? 'منتظم' : 'رکن'}
@@ -167,7 +198,7 @@ const UserManagement = ({
                         </div>
                         <p className="text-sm text-gray-500" dir="rtl">{user.email}</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -196,7 +227,7 @@ const UserManagement = ({
 
       {/* User Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle dir="rtl">
               {modalMode === 'create' ? 'نیا صارف شامل کریں' : 'صارف میں تبدیلی'}
@@ -250,11 +281,27 @@ const UserManagement = ({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} dir="rtl">
+            <div>
+              <Label htmlFor="secretNumber" dir="rtl">خفیہ نمبر</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="secretNumber"
+                  value={formData.secretNumber}
+                  onChange={(e) => setFormData({ ...formData, secretNumber: e.target.value })}
+                  required
+                  dir="rtl"
+                  className="flex-1"
+                />
+                <Button type="button" onClick={generateSecretNumber} variant="outline">
+                  تبدیل کریں
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} dir="rtl" className="w-full sm:w-auto">
                 منسوخ
               </Button>
-              <Button type="submit" dir="rtl">
+              <Button type="submit" dir="rtl" className="w-full sm:w-auto">
                 {modalMode === 'create' ? 'شامل کریں' : 'محفوظ کریں'}
               </Button>
             </div>
