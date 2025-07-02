@@ -26,7 +26,7 @@ const Header = ({
             <img src="/lovable-uploads/e1652408-702e-47c9-834c-bafadef748e9.png" alt="Majlis e Dawatul Haq Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white p-1 flex-shrink-0" />
             <div className="text-center sm:text-right">
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight">مجلس دعوۃ الحق</h1>
-              <span className="text-xs sm:text-sm opacity-90 block mt-0.5">ٹاسک  مینجمنٹ سسٹم</span>
+              <span className="text-xs sm:text-sm opacity-90 block mt-0.5 my-[10px]">ٹاسک  مینجمنٹ سسٹم</span>
             </div>
           </div>
 
