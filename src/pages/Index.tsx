@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
@@ -167,7 +168,7 @@ const Index = () => {
     }
   ]);
 
-  // Initial tasks data
+  // Complete initial tasks data with all tasks
   const initialTasks: Task[] = [
     {
       id: '1',
@@ -216,6 +217,126 @@ const Index = () => {
       dueDate: '2024-01-10',
       progress: 100,
       memberNotes: 'دستاویزات مکمل اور جمع کر دیے گئے'
+    },
+    {
+      id: '6',
+      title: 'رپورٹس کا جائزہ',
+      description: 'ماہانہ رپورٹس کی تیاری اور جائزہ',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'مولوی سہیل صاحب',
+      createdAt: '2024-01-06',
+      dueDate: '2024-01-25',
+      progress: 0,
+      memberNotes: 'رپورٹس کے لیے ڈیٹا اکٹھا کیا جا رہا ہے'
+    },
+    {
+      id: '7',
+      title: 'اجلاس کی تیاری',
+      description: 'اگلے ہفتے کے اجلاس کے ایجنڈے کی تیاری',
+      status: 'inprogress',
+      priority: 'medium',
+      assignedTo: 'مولوی امجد صاحب',
+      createdAt: '2024-01-07',
+      dueDate: '2024-01-22',
+      progress: 40,
+      memberNotes: 'ایجنڈے کے نکات تیار کیے جا رہے ہیں'
+    },
+    {
+      id: '8',
+      title: 'تعلیمی مواد کی تیاری',
+      description: 'طلبہ کے لیے تعلیمی مواد تیار کرنا',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'حافظ شفاعت صاحب',
+      createdAt: '2024-01-08',
+      dueDate: '2024-01-28',
+      progress: 0,
+      memberNotes: 'مواد کے موضوعات پر مشاورت جاری ہے'
+    },
+    {
+      id: '9',
+      title: 'حاضری کا ریکارڈ',
+      description: 'حاضری کے ریکارڈ کی جانچ اور اپڈیٹ',
+      status: 'inprogress',
+      priority: 'low',
+      assignedTo: 'حافظ ایاز صاحب',
+      createdAt: '2024-01-09',
+      dueDate: '2024-01-18',
+      progress: 60,
+      memberNotes: 'ریکارڈ اپڈیٹ کیا جا رہا ہے'
+    },
+    {
+      id: '10',
+      title: 'مالی امور کی نگرانی',
+      description: 'مالی ریکارڈز اور اخراجات کی نگرانی',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'مولوی احمد صاحب',
+      createdAt: '2024-01-10',
+      dueDate: '2024-01-30',
+      progress: 0,
+      memberNotes: 'مالی ڈیٹا اکٹھا کیا جا رہا ہے'
+    },
+    {
+      id: '11',
+      title: 'کمیٹی ممبران کی فہرست',
+      description: 'کمیٹی ممبران کی تازہ فہرست تیار کرنا',
+      status: 'done',
+      priority: 'medium',
+      assignedTo: 'مولوی طفیل صاحب',
+      createdAt: '2024-01-11',
+      dueDate: '2024-01-15',
+      progress: 100,
+      memberNotes: 'فہرست مکمل اور جمع کرا دی گئی'
+    },
+    {
+      id: '12',
+      title: 'نئے ممبران کی رجسٹریشن',
+      description: 'نئے ممبران کی رجسٹریشن کا عمل',
+      status: 'inprogress',
+      priority: 'medium',
+      assignedTo: 'مولوی امتیاز صاحب',
+      createdAt: '2024-01-12',
+      dueDate: '2024-01-27',
+      progress: 50,
+      memberNotes: 'کچھ ممبران کا ڈیٹا باقی ہے'
+    },
+    {
+      id: '13',
+      title: 'تعلیمی ورکشاپ',
+      description: 'ورکشاپ کے انتظامات اور دعوت نامے',
+      status: 'todo',
+      priority: 'low',
+      assignedTo: 'مولوی بلال صاحب',
+      createdAt: '2024-01-13',
+      dueDate: '2024-01-29',
+      progress: 0,
+      memberNotes: 'ورکشاپ کی تاریخ طے ہونا باقی ہے'
+    },
+    {
+      id: '14',
+      title: 'سالانہ رپورٹ',
+      description: 'سالانہ رپورٹ کی تیاری اور جمع',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'مولوی ذاکر صاحب',
+      createdAt: '2024-01-14',
+      dueDate: '2024-01-31',
+      progress: 0,
+      memberNotes: 'ڈیٹا اکٹھا کیا جا رہا ہے'
+    },
+    {
+      id: '15',
+      title: 'اجتماعی پروگرام',
+      description: 'اجتماعی پروگرام کے انتظامات',
+      status: 'inprogress',
+      priority: 'medium',
+      assignedTo: 'مولوی فضل الرحمن صاحب',
+      createdAt: '2024-01-15',
+      dueDate: '2024-01-28',
+      progress: 20,
+      memberNotes: 'پروگرام کی جگہ اور تاریخ زیر غور ہیں'
     }
   ];
 

@@ -13,6 +13,7 @@ import { Notification } from './NotificationPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
@@ -49,6 +50,7 @@ const Dashboard = ({
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const { toast } = useToast();
 
   // Initialize task manager with realtime data
   const taskManager = TaskManager({
@@ -92,36 +94,60 @@ const Dashboard = ({
   };
 
   const generatePDFReport = () => {
-    const reportContent = `
-مجلس دعوۃ الحق - ٹاسک رپورٹ
-تاریخ: ${new Date().toLocaleDateString('ur-PK')}
+    try {
+      const currentDate = new Date().toLocaleDateString('ur-PK');
+      const reportContent = `مجلس دعوۃ الحق - ٹاسک رپورٹ
+تاریخ: ${currentDate}
 
 کل ٹاسکس: ${tasks.length}
-مکمل ہونے والے: ${tasks.filter(t => t.status === 'done').length}
+مکمل ہونے والے: ${tasks.filter(t => t.status === 'done').length}  
 جاری: ${tasks.filter(t => t.status === 'inprogress').length}
 جائزہ میں: ${tasks.filter(t => t.status === 'review').length}
 باقی: ${tasks.filter(t => t.status === 'todo').length}
 
 تفصیلی فہرست:
 ${tasks.map(task => `
+
 ٹاسک: ${task.title}
 تفصیل: ${task.description}
 ذمہ دار: ${task.assignedTo}
 حالت: ${task.status}
+ترجیح: ${task.priority}
 پیش قدمی: ${task.progress}%
 آخری تاریخ: ${new Date(task.dueDate).toLocaleDateString('ur-PK')}
+رکن کی رپورٹ: ${task.memberNotes || 'کوئی رپورٹ نہیں'}
 `).join('\n')}
-    `;
 
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `majlis-task-report-${new Date().getTime()}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+رپورٹ تیار کردہ: ${userName}
+وقت: ${new Date().toLocaleString('ur-PK')}
+      `;
+
+      const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `majlis-task-report-${new Date().getTime()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "رپورٹ ڈاؤن لوڈ ہو گئی",
+        description: "PDF رپورٹ کامیابی سے ڈاؤن لوڈ ہو گئی",
+        duration: 3000,
+      });
+
+      console.log('PDF report generated successfully');
+    } catch (error) {
+      console.error('Error generating PDF report:', error);
+      toast({
+        title: "خرابی",
+        description: "رپورٹ بناتے وقت خرابی ہوئی",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   // User management functions
@@ -195,7 +221,7 @@ ${tasks.map(task => `
             <div className="mb-4 flex justify-end">
               <Button 
                 onClick={generatePDFReport}
-                className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white"
+                className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 dir="rtl"
               >
                 <FileText className="h-4 w-4 ml-2" />
