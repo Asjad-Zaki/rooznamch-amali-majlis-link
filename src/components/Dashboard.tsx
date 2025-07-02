@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
@@ -44,7 +45,8 @@ const Dashboard = ({
     updateTasks, 
     updateNotifications,
     deleteNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    isConnected
   } = useRealtime();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -72,11 +74,13 @@ const Dashboard = ({
 
   // Log for debugging realtime updates
   useEffect(() => {
-    console.log('Dashboard - Realtime tasks updated:', tasks);
-    console.log('Dashboard - Realtime notifications updated:', notifications);
-  }, [tasks, notifications]);
+    console.log('Dashboard - Realtime connection:', isConnected);
+    console.log('Dashboard - Tasks count:', tasks.length);
+    console.log('Dashboard - Notifications count:', notifications.length);
+  }, [tasks, notifications, isConnected]);
 
   const handleMarkAsRead = (notificationId: string) => {
+    console.log('Dashboard: Marking notification as read:', notificationId);
     const updatedNotifications = notifications.map(notification => 
       notification.id === notificationId 
         ? { ...notification, read: true }
@@ -86,6 +90,7 @@ const Dashboard = ({
   };
 
   const handleMarkAllAsRead = () => {
+    console.log('Dashboard: Marking all notifications as read');
     const updatedNotifications = notifications.map(notification => ({ 
       ...notification, 
       read: true 
@@ -95,10 +100,43 @@ const Dashboard = ({
 
   const generatePDFReport = () => {
     try {
-      const currentDate = new Date().toLocaleDateString('ur-PK');
-      const reportContent = `مجلس دعوۃ الحق - ٹاسک رپورٹ
-تاریخ: ${currentDate}
+      console.log('Generating PDF report with tasks:', tasks.length);
+      
+      if (tasks.length === 0) {
+        toast({
+          title: "خرابی",
+          description: "رپورٹ بنانے کے لیے کم از کم ایک ٹاسک ہونا ضروری ہے",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
 
+      const currentDate = new Date().toLocaleDateString('ur-PK');
+      const currentTime = new Date().toLocaleTimeString('ur-PK');
+      
+      const statusLabels = {
+        todo: 'کرنا ہے',
+        inprogress: 'جاری',
+        review: 'جائزہ',
+        done: 'مکمل'
+      };
+
+      const priorityLabels = {
+        high: 'زیادہ',
+        medium: 'درمیانہ',
+        low: 'کم'
+      };
+
+      const reportContent = `مجلس دعوۃ الحق - ٹاسک رپورٹ
+============================================
+
+تاریخ: ${currentDate}
+وقت: ${currentTime}
+رپورٹ تیار کردہ: ${userName}
+
+خلاصہ:
+========
 کل ٹاسکس: ${tasks.length}
 مکمل ہونے والے: ${tasks.filter(t => t.status === 'done').length}  
 جاری: ${tasks.filter(t => t.status === 'inprogress').length}
@@ -106,20 +144,23 @@ const Dashboard = ({
 باقی: ${tasks.filter(t => t.status === 'todo').length}
 
 تفصیلی فہرست:
-${tasks.map(task => `
+===============
 
-ٹاسک: ${task.title}
-تفصیل: ${task.description}
-ذمہ دار: ${task.assignedTo}
-حالت: ${task.status}
-ترجیح: ${task.priority}
-پیش قدمی: ${task.progress}%
-آخری تاریخ: ${new Date(task.dueDate).toLocaleDateString('ur-PK')}
-رکن کی رپورٹ: ${task.memberNotes || 'کوئی رپورٹ نہیں'}
+${tasks.map((task, index) => `
+${index + 1}. ٹاسک: ${task.title}
+   تفصیل: ${task.description}
+   ذمہ دار: ${task.assignedTo}
+   حالت: ${statusLabels[task.status] || task.status}
+   ترجیح: ${priorityLabels[task.priority] || task.priority}
+   پیش قدمی: ${task.progress}%
+   شروعاتی تاریخ: ${new Date(task.createdAt).toLocaleDateString('ur-PK')}
+   آخری تاریخ: ${new Date(task.dueDate).toLocaleDateString('ur-PK')}
+   رکن کی رپورٹ: ${task.memberNotes || 'کوئی رپورٹ نہیں'}
+   
+-------------------------------------------
 `).join('\n')}
 
-رپورٹ تیار کردہ: ${userName}
-وقت: ${new Date().toLocaleString('ur-PK')}
+رپورٹ مکمل ہونے کا وقت: ${new Date().toLocaleString('ur-PK')}
       `;
 
       const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -134,11 +175,11 @@ ${tasks.map(task => `
 
       toast({
         title: "رپورٹ ڈاؤن لوڈ ہو گئی",
-        description: "PDF رپورٹ کامیابی سے ڈاؤن لوڈ ہو گئی",
+        description: `${tasks.length} ٹاسکس کی رپورٹ کامیابی سے ڈاؤن لوڈ ہو گئی`,
         duration: 3000,
       });
 
-      console.log('PDF report generated successfully');
+      console.log('PDF report generated successfully with', tasks.length, 'tasks');
     } catch (error) {
       console.error('Error generating PDF report:', error);
       toast({
@@ -181,6 +222,11 @@ ${tasks.map(task => `
 
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
+  const handleNotificationClick = () => {
+    console.log('Notification icon clicked, opening panel');
+    setIsNotificationPanelOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -211,11 +257,16 @@ ${tasks.map(task => `
           onLogout={onLogout}
           onRoleSwitch={actualRole === 'admin' ? onRoleSwitch : undefined}
           notifications={unreadNotifications}
-          onNotificationClick={() => setIsNotificationPanelOpen(true)}
+          onNotificationClick={handleNotificationClick}
         />
       </div>
       
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 relative z-10">
+        {/* Connection status indicator */}
+        <div className={`mb-2 text-xs ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+          {isConnected ? '🟢 ریئل ٹائم کنکشن فعال' : '🔴 کنکشن منقطع'}
+        </div>
+
         {viewMode === 'admin' ? (
           <div className="transform transition-all duration-700 animate-fade-in-up">
             <div className="mb-4 flex justify-end">
@@ -225,7 +276,7 @@ ${tasks.map(task => `
                 dir="rtl"
               >
                 <FileText className="h-4 w-4 ml-2" />
-                PDF رپورٹ
+                PDF رپورٹ ({tasks.length})
               </Button>
             </div>
 
@@ -320,7 +371,10 @@ ${tasks.map(task => `
           <NotificationPanel
             notifications={notifications}
             isOpen={isNotificationPanelOpen}
-            onClose={() => setIsNotificationPanelOpen(false)}
+            onClose={() => {
+              console.log('Closing notification panel');
+              setIsNotificationPanelOpen(false);
+            }}
             onMarkAsRead={handleMarkAsRead}
             onMarkAllAsRead={handleMarkAllAsRead}
             onDeleteNotification={deleteNotification}
