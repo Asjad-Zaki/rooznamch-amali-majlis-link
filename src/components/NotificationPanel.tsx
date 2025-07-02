@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, CheckCircle } from 'lucide-react';
+import { X, CheckCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export interface Notification {
@@ -20,6 +20,8 @@ interface NotificationPanelProps {
   onClose: () => void;
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
+  onDeleteNotification?: (notificationId: string) => void;
+  onClearAll?: () => void;
 }
 
 const NotificationPanel = ({ 
@@ -27,7 +29,9 @@ const NotificationPanel = ({
   isOpen, 
   onClose, 
   onMarkAsRead, 
-  onMarkAllAsRead 
+  onMarkAllAsRead,
+  onDeleteNotification,
+  onClearAll
 }: NotificationPanelProps) => {
   if (!isOpen) return null;
 
@@ -66,6 +70,18 @@ const NotificationPanel = ({
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg" dir="rtl">اطلاعات</CardTitle>
             <div className="flex items-center space-x-2">
+              {notifications.length > 0 && onClearAll && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearAll}
+                  className="text-xs text-red-600 hover:text-red-800"
+                  dir="rtl"
+                >
+                  <AlertTriangle className="h-3 w-3 ml-1" />
+                  سب حذف کریں
+                </Button>
+              )}
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
@@ -114,16 +130,30 @@ const NotificationPanel = ({
                         {getTypeLabel(notification.type)}
                       </Badge>
                     </div>
-                    {!notification.read && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onMarkAsRead(notification.id)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <CheckCircle className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <div className="flex items-center space-x-1">
+                      {!notification.read && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onMarkAsRead(notification.id)}
+                          className="h-6 w-6 p-0"
+                          title="پڑھا ہوا نشان لگائیں"
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {onDeleteNotification && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteNotification(notification.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          title="حذف کریں"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <h4 className="font-medium text-sm mb-1" dir="rtl">
                     {notification.title}

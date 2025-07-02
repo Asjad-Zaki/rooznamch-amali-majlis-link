@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
+import { RealtimeProvider } from '@/contexts/RealtimeContext';
 import { User } from '@/components/UserManagement';
 import { Notification } from '@/components/NotificationPanel';
+import { Task } from '@/components/TaskCard';
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
-  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // New state for view mode
+  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member');
 
   // Updated demo users with secret numbers
   const [users, setUsers] = useState<User[]>([
@@ -63,109 +65,159 @@ const Index = () => {
       createdAt: '2024-01-01',
       isActive: true
     },
-  {
-  id: '6',
-  name: 'مولوی سہیل صاحب',
-  email: 'suhail@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '567890',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '7',
-  name: 'مولوی امجد صاحب',
-  email: 'amjad@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '678901',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '8',
-  name: 'حافظ شفاعت صاحب',
-  email: 'shafat@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '789012',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '9',
-  name: 'حافظ ایاز صاحب',
-  email: 'ayaz@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '890123',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '10',
-  name: 'مولوی احمد صاحب',
-  email: 'ahmed@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '901234',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '11',
-  name: 'مولوی طفیل صاحب',
-  email: 'thufail@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '123457',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '12',
-  name: 'مولوی امتیاز صاحب',
-  email: 'imtiyaz@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '234568',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '13',
-  name: 'مولوی بلال صاحب',
-  email: 'bilal@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '345679',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '14',
-  name: 'مولوی ذاکر صاحب',
-  email: 'zakir@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '456780',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '15',
-  name: 'مولوی فضل الرحمن صاحب',
-  email: 'zakir@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '456780',
-  createdAt: '2024-01-01',
-  isActive: true
-}
-
-// ...existing code...
+    {
+      id: '6',
+      name: 'مولوی سہیل صاحب',
+      email: 'suhail@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '567890',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '7',
+      name: 'مولوی امجد صاحب',
+      email: 'amjad@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '678901',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '8',
+      name: 'حافظ شفاعت صاحب',
+      email: 'shafat@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '789012',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '9',
+      name: 'حافظ ایاز صاحب',
+      email: 'ayaz@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '890123',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '10',
+      name: 'مولوی احمد صاحب',
+      email: 'ahmed@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '901234',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '11',
+      name: 'مولوی طفیل صاحب',
+      email: 'thufail@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '123457',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '12',
+      name: 'مولوی امتیاز صاحب',
+      email: 'imtiyaz@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '234568',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '13',
+      name: 'مولوی بلال صاحب',
+      email: 'bilal@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '345679',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '14',
+      name: 'مولوی ذاکر صاحب',
+      email: 'zakir@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '456780',
+      createdAt: '2024-01-01',
+      isActive: true
+    },
+    {
+      id: '15',
+      name: 'مولوی فضل الرحمن صاحب',
+      email: 'fazlurrahman@example.com',
+      role: 'member',
+      password: 'member123',
+      secretNumber: '567891',
+      createdAt: '2024-01-01',
+      isActive: true
+    }
   ]);
+
+  // Initial tasks data
+  const initialTasks: Task[] = [
+    {
+      id: '1',
+      title: 'ویب سائٹ کی ڈیزائن',
+      description: 'نئی ویب سائٹ کے لیے UI/UX ڈیزائن تیار کرنا',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'احمد علی',
+      createdAt: '2024-01-01',
+      dueDate: '2024-01-15',
+      progress: 0,
+      memberNotes: ''
+    },
+    {
+      id: '2',
+      title: 'ڈیٹابیس کا سیٹ اپ',
+      description: 'پروجیکٹ کے لیے ڈیٹابیس کی تشکیل اور کنفیگریشن',
+      status: 'inprogress',
+      priority: 'medium',
+      assignedTo: 'فاطمہ خان',
+      createdAt: '2024-01-02',
+      dueDate: '2024-01-20',
+      progress: 30,
+      memberNotes: 'ڈیٹابیس کی بنیادی ساخت مکمل ہو گئی'
+    },
+    {
+      id: '3',
+      title: 'ٹیسٹنگ اور ڈیبگنگ',
+      description: 'سافٹ ویئر میں موجود مسائل کی تشخیص اور حل',
+      status: 'review',
+      priority: 'high',
+      assignedTo: 'محمد حسن',
+      createdAt: '2024-01-03',
+      dueDate: '2024-01-18',
+      progress: 80,
+      memberNotes: 'اہم bugs حل ہو گئے، فائنل ٹیسٹنگ باقی ہے'
+    },
+    {
+      id: '4',
+      title: 'دستاویزات کی تیاری',
+      description: 'پروجیکٹ کی مکمل دستاویزات اور رپورٹس',
+      status: 'done',
+      priority: 'low',
+      assignedTo: 'عائشہ سلیم',
+      createdAt: '2024-01-04',
+      dueDate: '2024-01-10',
+      progress: 100,
+      memberNotes: 'دستاویزات مکمل اور جمع کر دیے گئے'
+    }
+  ];
 
   // Shared notifications state
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -174,7 +226,7 @@ const Index = () => {
     setUserRole(role);
     setUserName(name);
     setUserId(id);
-    setViewMode(role); // Set initial view mode to user's role
+    setViewMode(role);
     setIsLoggedIn(true);
   };
 
@@ -187,7 +239,6 @@ const Index = () => {
   };
 
   const handleRoleSwitch = () => {
-    // Only admin can switch views
     if (userRole === 'admin') {
       setViewMode(viewMode === 'admin' ? 'member' : 'admin');
     }
@@ -198,19 +249,23 @@ const Index = () => {
   }
 
   return (
-    <Dashboard 
-      userRole={viewMode} // Pass view mode as userRole for UI
-      userName={userName}
-      userId={userId}
-      onLogout={handleLogout}
-      onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
-      users={users}
-      onUpdateUsers={setUsers}
-      notifications={notifications}
-      onUpdateNotifications={setNotifications}
-      viewMode={viewMode} // Pass view mode separately
-      actualRole={userRole} // Pass actual role for permissions
-    />
+    <RealtimeProvider 
+      initialTasks={initialTasks}
+      initialNotifications={notifications}
+      initialUsers={users}
+    >
+      <Dashboard 
+        userRole={viewMode}
+        userName={userName}
+        userId={userId}
+        onLogout={handleLogout}
+        onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
+        users={users}
+        onUpdateUsers={setUsers}
+        viewMode={viewMode}
+        actualRole={userRole}
+      />
+    </RealtimeProvider>
   );
 };
 

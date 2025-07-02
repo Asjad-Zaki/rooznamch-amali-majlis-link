@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import TaskModal from './TaskModal';
 import { Task } from './TaskCard';
@@ -36,7 +37,7 @@ const TaskManager = ({
       read: false
     };
     
-    console.log('Creating notification:', newNotification);
+    console.log('Creating real-time notification:', newNotification);
     onUpdateNotifications([newNotification, ...notifications]);
     
     toast({
@@ -64,7 +65,8 @@ const TaskManager = ({
     
     const taskToDelete = tasks.find(task => task.id === taskId);
     if (taskToDelete) {
-      onUpdateTasks(tasks.filter(task => task.id !== taskId));
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      onUpdateTasks(updatedTasks);
       createNotification(
         'task_deleted',
         'ٹاسک حذف کر دیا گیا',
@@ -82,8 +84,9 @@ const TaskManager = ({
         id: Date.now().toString(),
         createdAt: new Date().toISOString()
       };
-      console.log('Adding new task:', newTask);
-      onUpdateTasks([...tasks, newTask]);
+      console.log('Adding new task with realtime sync:', newTask);
+      const updatedTasks = [...tasks, newTask];
+      onUpdateTasks(updatedTasks);
       createNotification(
         'task_created',
         'نیا ٹاسک بنایا گیا',
@@ -91,12 +94,13 @@ const TaskManager = ({
       );
     } else if (currentTask) {
       const updatedTask = { ...currentTask, ...taskData };
-      console.log('Updating task:', updatedTask);
-      onUpdateTasks(tasks.map(task => 
+      console.log('Updating task with realtime sync:', updatedTask);
+      const updatedTasks = tasks.map(task => 
         task.id === currentTask.id 
           ? updatedTask
           : task
-      ));
+      );
+      onUpdateTasks(updatedTasks);
       createNotification(
         'task_updated',
         'ٹاسک اپڈیٹ ہوا',
@@ -112,11 +116,12 @@ const TaskManager = ({
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       const updatedTask = { ...task, status: newStatus };
-      onUpdateTasks(tasks.map(task => 
+      const updatedTasks = tasks.map(task => 
         task.id === taskId 
           ? updatedTask
           : task
-      ));
+      );
+      onUpdateTasks(updatedTasks);
       
       const statusLabels = {
         todo: 'کرنا ہے',
@@ -137,11 +142,12 @@ const TaskManager = ({
     const task = tasks.find(t => t.id === taskId);
     if (task && task.assignedTo === userName) {
       const updatedTask = { ...task, progress, memberNotes };
-      onUpdateTasks(tasks.map(t => 
+      const updatedTasks = tasks.map(t => 
         t.id === taskId 
           ? updatedTask
           : t
-      ));
+      );
+      onUpdateTasks(updatedTasks);
       
       createNotification(
         'task_updated',
