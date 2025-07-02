@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
@@ -17,9 +16,9 @@ const Index = () => {
     {
       id: '1',
       name: 'منتظم',
-      email: 'admin@example.com',
+      email: 'admin@gmail.com',
       role: 'admin',
-      password: 'admin123',
+      password: '1111',
       secretNumber: '000000',
       createdAt: '2024-01-01',
       isActive: true
@@ -63,7 +62,109 @@ const Index = () => {
       secretNumber: '456789',
       createdAt: '2024-01-01',
       isActive: true
-    }
+    },
+  {
+  id: '6',
+  name: 'مولوی سہیل صاحب',
+  email: 'suhail@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '567890',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '7',
+  name: 'مولوی امجد صاحب',
+  email: 'amjad@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '678901',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '8',
+  name: 'حافظ شفاعت صاحب',
+  email: 'shafat@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '789012',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '9',
+  name: 'حافظ ایاز صاحب',
+  email: 'ayaz@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '890123',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '10',
+  name: 'مولوی احمد صاحب',
+  email: 'ahmed@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '901234',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '11',
+  name: 'مولوی طفیل صاحب',
+  email: 'thufail@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '123457',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '12',
+  name: 'مولوی امتیاز صاحب',
+  email: 'imtiyaz@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '234568',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '13',
+  name: 'مولوی بلال صاحب',
+  email: 'bilal@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '345679',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '14',
+  name: 'مولوی ذاکر صاحب',
+  email: 'zakir@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '456780',
+  createdAt: '2024-01-01',
+  isActive: true
+},
+{
+  id: '15',
+  name: 'مولوی فضل الرحمن صاحب',
+  email: 'zakir@example.com',
+  role: 'member',
+  password: 'member123',
+  secretNumber: '456780',
+  createdAt: '2024-01-01',
+  isActive: true
+}
+
+// ...existing code...
   ]);
 
   // Shared notifications state
