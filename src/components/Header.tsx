@@ -43,12 +43,7 @@ const Header = ({
             </div>
             
             {/* User Welcome Text */}
-            <div className="hidden sm:flex flex-col items-end text-right" dir="rtl">
-              <span className="text-sm lg:text-base font-medium">خوش آمدید، {userName}</span>
-              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs opacity-90">
-                {userRole === 'admin' ? 'منتظم' : 'رکن'}
-              </span>
-            </div>
+            
 
             {/* Mobile User Info */}
             <div className="flex sm:hidden items-center gap-2" dir="rtl">
