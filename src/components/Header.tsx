@@ -54,7 +54,7 @@ const Header = ({
             </div>
             
             {/* Role Switch Button - Only for admin */}
-            {userRole === 'admin' && onRoleSwitch && <Button variant="outline" size="sm" onClick={onRoleSwitch} className="border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 text-inherit">
+            {userRole === 'admin' && onRoleSwitch && <Button variant="outline" size="sm" onClick={onRoleSwitch} className="border-white/30 hover:border-white/50 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 text-inherit bg-inherit">
                 <Users className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:mr-2" />
                 <span dir="rtl" className="hidden sm:inline">رکن کی نظر</span>
                 <span dir="rtl" className="sm:hidden">رکن</span>
