@@ -9,30 +9,57 @@ interface RealtimeData {
 class RealtimeService {
   private eventSource: EventSource | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
-  private reconnectInterval: number = 1000; // Faster sync
+  private reconnectInterval: number = 500; // Faster sync
   private maxReconnectAttempts: number = 10;
   private reconnectAttempts: number = 0;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private syncInterval: NodeJS.Timeout | null = null;
+  private broadcastChannel: BroadcastChannel | null = null;
+  private lastSyncTimestamp: number = 0;
 
-  // Enhanced real-time service with better cross-device sync
+  // Enhanced real-time service with true cross-device sync
   initialize() {
-    console.log('RealtimeService initializing with enhanced sync...');
+    console.log('RealtimeService initializing with cross-device sync...');
+    this.setupBroadcastChannel();
     this.setupStorageListener();
     this.startHeartbeat();
     this.startContinuousSync();
     this.setupVisibilityListener();
     this.setupUnloadListener();
+    this.setupNetworkListener();
+  }
+
+  private setupBroadcastChannel() {
+    try {
+      this.broadcastChannel = new BroadcastChannel('majlis_realtime');
+      this.broadcastChannel.addEventListener('message', (event) => {
+        console.log('BroadcastChannel message received:', event.data);
+        this.handleRealtimeUpdate(event.data);
+      });
+    } catch (error) {
+      console.log('BroadcastChannel not supported, using fallback methods');
+    }
+  }
+
+  private setupNetworkListener() {
+    window.addEventListener('online', () => {
+      console.log('Network back online - forcing sync');
+      setTimeout(() => this.forceSync(), 1000);
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('Network offline - will sync when back online');
+    });
   }
 
   private setupStorageListener() {
     // Listen for storage changes (cross-device communication)
     window.addEventListener('storage', (event) => {
-      if (event.key?.startsWith('realtime_') && event.newValue) {
+      if (event.key?.startsWith('majlis_') && event.newValue) {
         try {
           const data = JSON.parse(event.newValue);
           console.log('Cross-device storage event received:', data);
-          this.notifyListeners('data_update', data);
+          this.handleRealtimeUpdate(data);
         } catch (error) {
           console.error('Error parsing realtime data:', error);
         }
@@ -40,9 +67,9 @@ class RealtimeService {
     });
 
     // Custom events for same-tab communication
-    window.addEventListener('realtime_update', ((event: CustomEvent) => {
+    window.addEventListener('majlis_update', ((event: CustomEvent) => {
       console.log('Same-tab custom event received:', event.detail);
-      this.notifyListeners('data_update', event.detail);
+      this.handleRealtimeUpdate(event.detail);
     }) as EventListener);
 
     // Focus event for immediate sync
@@ -58,6 +85,16 @@ class RealtimeService {
         this.syncOnFocus();
       }
     });
+  }
+
+  private handleRealtimeUpdate(data: any) {
+    if (data.timestamp && data.timestamp <= this.lastSyncTimestamp) {
+      console.log('Ignoring old update:', data.timestamp, 'vs', this.lastSyncTimestamp);
+      return;
+    }
+
+    this.lastSyncTimestamp = data.timestamp || Date.now();
+    this.notifyListeners('data_update', data);
   }
 
   private setupVisibilityListener() {
@@ -79,7 +116,7 @@ class RealtimeService {
     // Sync all data types when page gains focus
     const dataTypes = ['tasks', 'notifications', 'users'];
     dataTypes.forEach(type => {
-      const latestData = localStorage.getItem(`app_${type}`);
+      const latestData = localStorage.getItem(`majlis_${type}`);
       if (latestData) {
         try {
           const data = JSON.parse(latestData);
@@ -90,7 +127,7 @@ class RealtimeService {
             source: 'focus_sync'
           };
           console.log(`Syncing ${type} on focus:`, updateData);
-          this.notifyListeners('data_update', updateData);
+          this.handleRealtimeUpdate(updateData);
         } catch (error) {
           console.error(`Error syncing ${type} on focus:`, error);
         }
@@ -109,7 +146,7 @@ class RealtimeService {
         timestamp: Date.now(),
         source: 'heartbeat'
       });
-    }, 5000); // Every 5 seconds for faster sync
+    }, 3000); // Every 3 seconds for faster sync
   }
 
   private startContinuousSync() {
@@ -119,13 +156,13 @@ class RealtimeService {
 
     this.syncInterval = setInterval(() => {
       this.forceSync();
-    }, 3000); // Sync every 3 seconds
+    }, 2000); // Sync every 2 seconds
   }
 
   private broadcastCurrentState() {
-    const tasks = localStorage.getItem('app_tasks');
-    const notifications = localStorage.getItem('app_notifications');
-    const users = localStorage.getItem('app_users');
+    const tasks = localStorage.getItem('majlis_tasks');
+    const notifications = localStorage.getItem('majlis_notifications');
+    const users = localStorage.getItem('majlis_users');
 
     if (tasks || notifications || users) {
       const state = {
@@ -178,55 +215,66 @@ class RealtimeService {
 
     console.log('Broadcasting enhanced update:', updateData);
 
+    // BroadcastChannel for same-origin cross-tab communication
+    if (this.broadcastChannel) {
+      try {
+        this.broadcastChannel.postMessage(updateData);
+      } catch (error) {
+        console.error('Error broadcasting via BroadcastChannel:', error);
+      }
+    }
+
     // Store with unique keys for better cross-device sync
     try {
-      const storageKey = `realtime_${updateData.type}_${Date.now()}`;
+      const storageKey = `majlis_${updateData.type}_${Date.now()}`;
       localStorage.setItem(storageKey, JSON.stringify(updateData));
-      localStorage.setItem('last_update_timestamp', updateData.timestamp.toString());
+      localStorage.setItem('majlis_last_update', updateData.timestamp.toString());
       
-      // Clean old realtime entries
-      this.cleanOldRealtimeEntries();
+      // Clean old entries
+      this.cleanOldEntries();
     } catch (error) {
       console.error('Error storing realtime data:', error);
     }
 
     // Dispatch custom event for same-tab
-    window.dispatchEvent(new CustomEvent('realtime_update', { detail: updateData }));
+    window.dispatchEvent(new CustomEvent('majlis_update', { detail: updateData }));
 
     // Force storage event for same-tab sync
     setTimeout(() => {
       window.dispatchEvent(new StorageEvent('storage', {
-        key: `realtime_${updateData.type}`,
+        key: `majlis_${updateData.type}`,
         newValue: JSON.stringify(updateData),
         oldValue: null,
         storageArea: localStorage,
         url: window.location.href
       }));
-    }, 50);
+    }, 100);
   }
 
   private getDeviceId(): string {
-    let deviceId = localStorage.getItem('device_id');
+    let deviceId = localStorage.getItem('majlis_device_id');
     if (!deviceId) {
       deviceId = Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('device_id', deviceId);
+      localStorage.setItem('majlis_device_id', deviceId);
     }
     return deviceId;
   }
 
-  private cleanOldRealtimeEntries() {
+  private cleanOldEntries() {
     const now = Date.now();
-    const maxAge = 60000; // 1 minute
+    const maxAge = 120000; // 2 minutes
 
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('realtime_')) {
+      if (key.startsWith('majlis_') && key.includes('_')) {
         try {
           const data = JSON.parse(localStorage.getItem(key) || '{}');
           if (data.timestamp && (now - data.timestamp) > maxAge) {
             localStorage.removeItem(key);
           }
         } catch (error) {
-          localStorage.removeItem(key);
+          if (key.startsWith('majlis_') && key !== 'majlis_tasks' && key !== 'majlis_notifications' && key !== 'majlis_users') {
+            localStorage.removeItem(key);
+          }
         }
       }
     });
@@ -239,11 +287,11 @@ class RealtimeService {
     // Also trigger listeners with current data
     const dataTypes = ['tasks', 'notifications', 'users'];
     dataTypes.forEach(type => {
-      const data = localStorage.getItem(`app_${type}`);
+      const data = localStorage.getItem(`majlis_${type}`);
       if (data) {
         try {
           const parsedData = JSON.parse(data);
-          this.notifyListeners('data_update', {
+          this.handleRealtimeUpdate({
             type: `${type}_force_sync`,
             [type]: parsedData,
             timestamp: Date.now()
@@ -267,6 +315,10 @@ class RealtimeService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
+    }
+    if (this.broadcastChannel) {
+      this.broadcastChannel.close();
+      this.broadcastChannel = null;
     }
     this.listeners.clear();
   }

@@ -44,7 +44,7 @@ export const RealtimeProvider = ({
   
   // Initialize with stored data or initial data
   const [tasks, setTasks] = useState<Task[]>(() => {
-    const storedTasks = localStorage.getItem('app_tasks');
+    const storedTasks = localStorage.getItem('majlis_tasks');
     if (storedTasks) {
       try {
         const parsed = JSON.parse(storedTasks);
@@ -55,12 +55,12 @@ export const RealtimeProvider = ({
       }
     }
     console.log('Using initial tasks:', initialTasks.length, 'tasks');
-    localStorage.setItem('app_tasks', JSON.stringify(initialTasks));
+    localStorage.setItem('majlis_tasks', JSON.stringify(initialTasks));
     return initialTasks;
   });
 
   const [notifications, setNotifications] = useState<Notification[]>(() => {
-    const storedNotifications = localStorage.getItem('app_notifications');
+    const storedNotifications = localStorage.getItem('majlis_notifications');
     if (storedNotifications) {
       try {
         const parsed = JSON.parse(storedNotifications);
@@ -70,12 +70,12 @@ export const RealtimeProvider = ({
         console.error('Error parsing stored notifications:', error);
       }
     }
-    localStorage.setItem('app_notifications', JSON.stringify(initialNotifications));
+    localStorage.setItem('majlis_notifications', JSON.stringify(initialNotifications));
     return initialNotifications;
   });
 
   const [users, setUsers] = useState<User[]>(() => {
-    const storedUsers = localStorage.getItem('app_users');
+    const storedUsers = localStorage.getItem('majlis_users');
     if (storedUsers) {
       try {
         const parsed = JSON.parse(storedUsers);
@@ -85,23 +85,23 @@ export const RealtimeProvider = ({
         console.error('Error parsing stored users:', error);
       }
     }
-    localStorage.setItem('app_users', JSON.stringify(initialUsers));
+    localStorage.setItem('majlis_users', JSON.stringify(initialUsers));
     return initialUsers;
   });
 
   // Store data to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('app_tasks', JSON.stringify(tasks));
+    localStorage.setItem('majlis_tasks', JSON.stringify(tasks));
     console.log('Tasks stored to localStorage:', tasks.length, 'tasks');
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('app_notifications', JSON.stringify(notifications));
+    localStorage.setItem('majlis_notifications', JSON.stringify(notifications));
     console.log('Notifications stored to localStorage:', notifications.length, 'notifications');
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('app_users', JSON.stringify(users));
+    localStorage.setItem('majlis_users', JSON.stringify(users));
     console.log('Users stored to localStorage:', users.length, 'users');
   }, [users]);
 
@@ -116,7 +116,7 @@ export const RealtimeProvider = ({
     const unsubscribe = realtimeService.subscribe('data_update', (data) => {
       console.log('RealtimeContext: Received realtime update:', data);
       
-      // Always update if we receive valid data
+      // Update data based on what was received
       if (data.tasks && Array.isArray(data.tasks)) {
         console.log('Updating tasks from realtime:', data.tasks.length, 'tasks');
         setTasks(data.tasks);
@@ -137,7 +137,7 @@ export const RealtimeProvider = ({
     const syncTimer = setTimeout(() => {
       console.log('RealtimeProvider: Forcing initial sync...');
       realtimeService.forceSync();
-    }, 1000);
+    }, 500);
 
     return () => {
       clearTimeout(syncTimer);
@@ -151,7 +151,7 @@ export const RealtimeProvider = ({
     console.log('RealtimeContext: Updating tasks:', newTasks.length, 'tasks');
     setTasks(newTasks);
     
-    // Broadcast immediately
+    // Broadcast immediately with enhanced sync
     realtimeService.broadcastUpdate({
       type: 'tasks_update',
       tasks: newTasks,
@@ -164,7 +164,7 @@ export const RealtimeProvider = ({
     console.log('RealtimeContext: Updating notifications:', newNotifications.length, 'notifications');
     setNotifications(newNotifications);
     
-    // Broadcast immediately
+    // Broadcast immediately with enhanced sync
     realtimeService.broadcastUpdate({
       type: 'notifications_update',
       notifications: newNotifications,
@@ -177,7 +177,7 @@ export const RealtimeProvider = ({
     console.log('RealtimeContext: Updating users:', newUsers.length, 'users');
     setUsers(newUsers);
     
-    // Broadcast immediately
+    // Broadcast immediately with enhanced sync
     realtimeService.broadcastUpdate({
       type: 'users_update',
       users: newUsers,
