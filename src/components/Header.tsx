@@ -7,7 +7,6 @@ import { useRealtime } from '@/contexts/RealtimeContext';
 import { useNotificationHandler } from './NotificationHandler';
 import NotificationPanel from './NotificationPanel';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface HeaderProps {
   userRole: 'admin' | 'member';
@@ -43,6 +42,13 @@ const Header = ({
 
   const generatePDFReport = async () => {
     try {
+      console.log('Generating PDF report with proper Urdu formatting...');
+      
+      if (tasks.length === 0) {
+        alert('رپورٹ بنانے کے لیے کم از کم ایک ٹاسک ہونا ضروری ہے');
+        return;
+      }
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -55,89 +61,144 @@ const Header = ({
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
+          setTimeout(reject, 5000); // Timeout after 5 seconds
         });
         
         // Add image to PDF (centered at top)
-        const imgWidth = 180; // Adjust as needed
-        const imgHeight = 40; // Adjust as needed
+        const imgWidth = 160;
+        const imgHeight = 35;
         const x = (pageWidth - imgWidth) / 2;
         pdf.addImage(img, 'PNG', x, 10, imgWidth, imgHeight);
       } catch (error) {
         console.log('Could not load header image, continuing without it');
       }
 
-      // Add title
-      pdf.setFontSize(20);
+      let yPosition = 60;
+      
+      // Add title in Urdu
+      pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Task Management Report', pageWidth / 2, 70, { align: 'center' });
-      
-      // Add date
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, 80, { align: 'center' });
-      
-      let yPosition = 100;
-      
-      // Task Summary
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Task Summary:', 20, yPosition);
+      pdf.text('مجلس دعوۃ الحق - ٹاسک رپورٹ', pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 15;
+      
+      // Add date in Urdu format
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      const currentDate = new Date().toLocaleDateString('ur-PK', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      pdf.text(`تاریخ: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+      pdf.text(`رپورٹ تیار کردہ: ${userName}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+      
+      // Task Summary in Urdu
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('خلاصہ:', 20, yPosition);
+      yPosition += 12;
       
       const todoTasks = tasks.filter(t => t.status === 'todo').length;
       const inProgressTasks = tasks.filter(t => t.status === 'inprogress').length;
       const reviewTasks = tasks.filter(t => t.status === 'review').length;
       const doneTasks = tasks.filter(t => t.status === 'done').length;
       
-      pdf.setFontSize(12);
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total Tasks: ${tasks.length}`, 25, yPosition);
-      yPosition += 8;
-      pdf.text(`To Do: ${todoTasks}`, 25, yPosition);
-      yPosition += 8;
-      pdf.text(`In Progress: ${inProgressTasks}`, 25, yPosition);
-      yPosition += 8;
-      pdf.text(`Under Review: ${reviewTasks}`, 25, yPosition);
-      yPosition += 8;
-      pdf.text(`Completed: ${doneTasks}`, 25, yPosition);
-      yPosition += 20;
-      
-      // Task Details
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Task Details:', 20, yPosition);
+      pdf.text(`کل ٹاسکس: ${tasks.length}`, 25, yPosition);
+      yPosition += 7;
+      pdf.text(`کرنا ہے: ${todoTasks}`, 25, yPosition);
+      yPosition += 7;
+      pdf.text(`جاری: ${inProgressTasks}`, 25, yPosition);
+      yPosition += 7;
+      pdf.text(`جائزہ: ${reviewTasks}`, 25, yPosition);
+      yPosition += 7;
+      pdf.text(`مکمل: ${doneTasks}`, 25, yPosition);
       yPosition += 15;
       
+      // Task Details in Urdu
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('تفصیلی فہرست:', 20, yPosition);
+      yPosition += 12;
+      
+      const statusLabels = {
+        todo: 'کرنا ہے',
+        inprogress: 'جاری',
+        review: 'جائزہ',
+        done: 'مکمل'
+      };
+
+      const priorityLabels = {
+        high: 'زیادہ',
+        medium: 'درمیانہ',
+        low: 'کم'
+      };
+      
       tasks.forEach((task, index) => {
-        if (yPosition > pageHeight - 40) {
+        if (yPosition > pageHeight - 50) {
           pdf.addPage();
           yPosition = 20;
         }
         
-        pdf.setFontSize(12);
+        pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.text(`${index + 1}. ${task.title}`, 25, yPosition);
-        yPosition += 8;
+        yPosition += 7;
         
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Assigned to: ${task.assignedTo}`, 30, yPosition);
-        yPosition += 6;
-        pdf.text(`Status: ${task.status}`, 30, yPosition);
-        yPosition += 6;
-        pdf.text(`Priority: ${task.priority}`, 30, yPosition);
-        yPosition += 6;
-        pdf.text(`Progress: ${task.progress}%`, 30, yPosition);
-        yPosition += 6;
-        pdf.text(`Due Date: ${task.dueDate}`, 30, yPosition);
-        yPosition += 10;
+        pdf.setFontSize(9);
+        
+        // Wrap long descriptions
+        if (task.description) {
+          const descLines = pdf.splitTextToSize(`تفصیل: ${task.description}`, pageWidth - 60);
+          pdf.text(descLines, 30, yPosition);
+          yPosition += descLines.length * 5;
+        }
+        
+        pdf.text(`ذمہ دار: ${task.assignedTo}`, 30, yPosition);
+        yPosition += 5;
+        pdf.text(`حالت: ${statusLabels[task.status]}`, 30, yPosition);
+        yPosition += 5;
+        pdf.text(`ترجیح: ${priorityLabels[task.priority]}`, 30, yPosition);
+        yPosition += 5;
+        pdf.text(`پیش قدمی: ${task.progress}%`, 30, yPosition);
+        yPosition += 5;
+        
+        const dueDate = new Date(task.dueDate).toLocaleDateString('ur-PK');
+        pdf.text(`آخری تاریخ: ${dueDate}`, 30, yPosition);
+        yPosition += 5;
+        
+        if (task.memberNotes) {
+          const notesLines = pdf.splitTextToSize(`رکن کی رپورٹ: ${task.memberNotes}`, pageWidth - 60);
+          pdf.text(notesLines, 30, yPosition);
+          yPosition += notesLines.length * 5;
+        }
+        
+        yPosition += 8; // Space between tasks
       });
       
-      // Save the PDF
-      pdf.save(`task-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      // Add footer
+      const totalPages = pdf.internal.pages.length - 1;
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`صفحہ ${i} از ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+      
+      // Save the PDF with proper filename
+      const fileName = `majlis-task-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      console.log('PDF report generated successfully:', fileName);
+      alert(`رپورٹ کامیابی سے ڈاؤن لوڈ ہو گئی: ${tasks.length} ٹاسکس`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Error generating PDF report');
+      alert('رپورٹ بناتے وقت خرابی ہوئی۔ دوبارہ کوشش کریں۔');
     }
   };
 
