@@ -17,7 +17,7 @@ export class DatabaseService {
       return [];
     }
 
-    return data.map(task => ({
+    return (data as any[]).map(task => ({
       id: task.id,
       title: task.title,
       description: task.description || '',
@@ -52,17 +52,18 @@ export class DatabaseService {
       return null;
     }
 
+    const taskData = data as any;
     return {
-      id: data.id,
-      title: data.title,
-      description: data.description || '',
-      status: data.status as Task['status'],
-      priority: data.priority as Task['priority'],
-      assignedTo: data.assigned_to_name || '',
-      createdAt: data.created_at,
-      dueDate: data.due_date || '',
-      progress: data.progress || 0,
-      memberNotes: data.member_notes || ''
+      id: taskData.id,
+      title: taskData.title,
+      description: taskData.description || '',
+      status: taskData.status as Task['status'],
+      priority: taskData.priority as Task['priority'],
+      assignedTo: taskData.assigned_to_name || '',
+      createdAt: taskData.created_at,
+      dueDate: taskData.due_date || '',
+      progress: taskData.progress || 0,
+      memberNotes: taskData.member_notes || ''
     };
   }
 
@@ -115,7 +116,7 @@ export class DatabaseService {
       return [];
     }
 
-    return data.map(notification => ({
+    return (data as any[]).map(notification => ({
       id: notification.id,
       title: notification.title,
       message: notification.message,
@@ -196,6 +197,6 @@ export class DatabaseService {
       return [];
     }
 
-    return data || [];
+    return (data as any[]) || [];
   }
 }

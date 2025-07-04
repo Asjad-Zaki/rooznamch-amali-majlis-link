@@ -5,214 +5,173 @@ import { DatabaseService } from '@/services/DatabaseService';
 import { Task } from '@/components/TaskCard';
 import { Notification } from '@/components/NotificationPanel';
 import { Profile } from '@/hooks/useAuth';
-import { useAuth } from '@/hooks/useAuth';
 
 interface DatabaseRealtimeContextType {
   tasks: Task[];
   notifications: Notification[];
   profiles: Profile[];
-  updateTasks: (tasks: Task[]) => void;
-  updateNotifications: (notifications: Notification[]) => void;
-  updateProfiles: (profiles: Profile[]) => void;
-  createTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<boolean>;
-  updateTask: (taskId: string, updates: Partial<Task>) => Promise<boolean>;
-  deleteTask: (taskId: string) => Promise<boolean>;
-  createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => Promise<boolean>;
-  markNotificationAsRead: (notificationId: string) => Promise<boolean>;
-  deleteNotification: (notificationId: string) => Promise<boolean>;
-  clearAllNotifications: () => Promise<boolean>;
   isConnected: boolean;
   loading: boolean;
+  createTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
+  deleteNotification: (notificationId: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
 }
 
 const DatabaseRealtimeContext = createContext<DatabaseRealtimeContextType | undefined>(undefined);
 
-export const useDatabaseRealtime = () => {
-  const context = useContext(DatabaseRealtimeContext);
-  if (!context) {
-    throw new Error('useDatabaseRealtime must be used within a DatabaseRealtimeProvider');
-  }
-  return context;
-};
-
-interface DatabaseRealtimeProviderProps {
-  children: React.ReactNode;
-}
-
-export const DatabaseRealtimeProvider = ({ children }: DatabaseRealtimeProviderProps) => {
+export const DatabaseRealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
-  // Load initial data
+  // Initial data loading
   useEffect(() => {
-    if (user) {
-      loadInitialData();
-      setupRealtimeSubscriptions();
-      setIsConnected(true);
-    } else {
-      setTasks([]);
-      setNotifications([]);
-      setProfiles([]);
-      setLoading(false);
-      setIsConnected(false);
-    }
-  }, [user]);
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        const [tasksData, notificationsData, profilesData] = await Promise.all([
+          DatabaseService.getTasks(),
+          DatabaseService.getNotifications(),
+          DatabaseService.getProfiles(),
+        ]);
 
-  const loadInitialData = async () => {
-    try {
-      const [tasksData, notificationsData, profilesData] = await Promise.all([
-        DatabaseService.getTasks(),
-        DatabaseService.getNotifications(),
-        DatabaseService.getProfiles()
-      ]);
+        setTasks(tasksData);
+        setNotifications(notificationsData);
+        setProfiles(profilesData);
+        setIsConnected(true);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        setIsConnected(false);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setTasks(tasksData);
-      setNotifications(notificationsData);
-      setProfiles(profilesData);
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadInitialData();
+  }, []);
 
-  const setupRealtimeSubscriptions = () => {
-    // Subscribe to tasks changes
+  // Real-time subscriptions
+  useEffect(() => {
     const tasksChannel = supabase
       .channel('tasks-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tasks'
-      }, () => {
-        console.log('Tasks changed, reloading...');
-        DatabaseService.getTasks().then(setTasks);
-      })
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tasks' },
+        async (payload) => {
+          console.log('Tasks change:', payload);
+          const updatedTasks = await DatabaseService.getTasks();
+          setTasks(updatedTasks);
+        }
+      )
       .subscribe();
 
-    // Subscribe to notifications changes
     const notificationsChannel = supabase
       .channel('notifications-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'notifications'
-      }, () => {
-        console.log('Notifications changed, reloading...');
-        DatabaseService.getNotifications().then(setNotifications);
-      })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        async (payload) => {
+          console.log('Notifications change:', payload);
+          const updatedNotifications = await DatabaseService.getNotifications();
+          setNotifications(updatedNotifications);
+        }
+      )
       .subscribe();
 
-    // Subscribe to profiles changes
     const profilesChannel = supabase
       .channel('profiles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'profiles'
-      }, () => {
-        console.log('Profiles changed, reloading...');
-        DatabaseService.getProfiles().then(setProfiles);
-      })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        async (payload) => {
+          console.log('Profiles change:', payload);
+          const updatedProfiles = await DatabaseService.getProfiles();
+          setProfiles(updatedProfiles);
+        }
+      )
       .subscribe();
 
-    // Cleanup function
     return () => {
       supabase.removeChannel(tasksChannel);
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(profilesChannel);
     };
-  };
+  }, []);
 
-  const createTask = async (task: Omit<Task, 'id' | 'createdAt'>): Promise<boolean> => {
+  // CRUD operations
+  const createTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
     const newTask = await DatabaseService.createTask(task);
     if (newTask) {
       await DatabaseService.createNotification({
-        title: 'نیا ٹاسک بنایا گیا',
-        message: `"${task.title}" نام کا نیا ٹاسک ${task.assignedTo} کو تفویض کیا گیا ہے`,
+        title: 'نیا ٹاسک',
+        message: `نیا ٹاسک "${task.title}" بنایا گیا`,
         type: 'task_created'
       });
-      return true;
     }
-    return false;
   };
 
-  const updateTask = async (taskId: string, updates: Partial<Task>): Promise<boolean> => {
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
     const success = await DatabaseService.updateTask(taskId, updates);
-    if (success && updates.title) {
+    if (success && updates.status) {
       await DatabaseService.createNotification({
-        title: 'ٹاسک اپڈیٹ ہوا',
-        message: `"${updates.title}" ٹاسک میں تبدیلی کی گئی ہے`,
+        title: 'ٹاسک اپڈیٹ',
+        message: `ٹاسک کی حالت تبدیل ہوئی: ${updates.status}`,
         type: 'task_updated'
       });
     }
-    return success;
   };
 
-  const deleteTask = async (taskId: string): Promise<boolean> => {
-    const task = tasks.find(t => t.id === taskId);
+  const deleteTask = async (taskId: string) => {
+    const taskToDelete = tasks.find(t => t.id === taskId);
     const success = await DatabaseService.deleteTask(taskId);
-    if (success && task) {
+    if (success && taskToDelete) {
       await DatabaseService.createNotification({
-        title: 'ٹاسک حذف کر دیا گیا',
-        message: `"${task.title}" ٹاسک حذف کر دیا گیا ہے`,
+        title: 'ٹاسک ڈیلیٹ',
+        message: `ٹاسک "${taskToDelete.title}" ڈیلیٹ کیا گیا`,
         type: 'task_deleted'
       });
     }
-    return success;
   };
 
-  const createNotification = async (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<boolean> => {
-    return await DatabaseService.createNotification(notification);
+  const markNotificationAsRead = async (notificationId: string) => {
+    await DatabaseService.markNotificationAsRead(notificationId);
   };
 
-  const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
-    return await DatabaseService.markNotificationAsRead(notificationId);
+  const deleteNotification = async (notificationId: string) => {
+    await DatabaseService.deleteNotification(notificationId);
   };
 
-  const deleteNotification = async (notificationId: string): Promise<boolean> => {
-    return await DatabaseService.deleteNotification(notificationId);
+  const clearAllNotifications = async () => {
+    await DatabaseService.clearAllNotifications();
   };
 
-  const clearAllNotifications = async (): Promise<boolean> => {
-    return await DatabaseService.clearAllNotifications();
-  };
-
-  const updateTasks = (newTasks: Task[]) => {
-    setTasks(newTasks);
-  };
-
-  const updateNotifications = (newNotifications: Notification[]) => {
-    setNotifications(newNotifications);
-  };
-
-  const updateProfiles = (newProfiles: Profile[]) => {
-    setProfiles(newProfiles);
+  const value: DatabaseRealtimeContextType = {
+    tasks,
+    notifications,
+    profiles,
+    isConnected,
+    loading,
+    createTask,
+    updateTask,
+    deleteTask,
+    markNotificationAsRead,
+    deleteNotification,
+    clearAllNotifications,
   };
 
   return (
-    <DatabaseRealtimeContext.Provider value={{
-      tasks,
-      notifications,
-      profiles,
-      updateTasks,
-      updateNotifications,
-      updateProfiles,
-      createTask,
-      updateTask,
-      deleteTask,
-      createNotification,
-      markNotificationAsRead,
-      deleteNotification,
-      clearAllNotifications,
-      isConnected,
-      loading
-    }}>
+    <DatabaseRealtimeContext.Provider value={value}>
       {children}
     </DatabaseRealtimeContext.Provider>
   );
+};
+
+export const useDatabaseRealtime = () => {
+  const context = useContext(DatabaseRealtimeContext);
+  if (context === undefined) {
+    throw new Error('useDatabaseRealtime must be used within a DatabaseRealtimeProvider');
+  }
+  return context;
 };

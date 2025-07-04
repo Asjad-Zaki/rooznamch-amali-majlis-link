@@ -8,6 +8,8 @@ import { DatabaseRealtimeProvider } from '@/contexts/DatabaseRealtimeContext';
 const Index = () => {
   const { user, profile, loading } = useAuth();
 
+  console.log('Index - Loading:', loading, 'User:', user, 'Profile:', profile);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -23,9 +25,13 @@ const Index = () => {
     );
   }
 
+  // Show login page if no user or profile
   if (!user || !profile) {
+    console.log('Showing AuthPage - No user or profile');
     return <AuthPage />;
   }
+
+  console.log('Showing Dashboard - User authenticated with profile:', profile.role);
 
   return (
     <DatabaseRealtimeProvider>
