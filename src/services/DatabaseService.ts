@@ -17,7 +17,7 @@ export class DatabaseService {
       return [];
     }
 
-    return (data as any[]).map(task => ({
+    return (data || []).map(task => ({
       id: task.id,
       title: task.title,
       description: task.description || '',
@@ -52,18 +52,19 @@ export class DatabaseService {
       return null;
     }
 
-    const taskData = data as any;
+    if (!data) return null;
+
     return {
-      id: taskData.id,
-      title: taskData.title,
-      description: taskData.description || '',
-      status: taskData.status as Task['status'],
-      priority: taskData.priority as Task['priority'],
-      assignedTo: taskData.assigned_to_name || '',
-      createdAt: taskData.created_at,
-      dueDate: taskData.due_date || '',
-      progress: taskData.progress || 0,
-      memberNotes: taskData.member_notes || ''
+      id: data.id,
+      title: data.title,
+      description: data.description || '',
+      status: data.status as Task['status'],
+      priority: data.priority as Task['priority'],
+      assignedTo: data.assigned_to_name || '',
+      createdAt: data.created_at,
+      dueDate: data.due_date || '',
+      progress: data.progress || 0,
+      memberNotes: data.member_notes || ''
     };
   }
 
@@ -116,7 +117,7 @@ export class DatabaseService {
       return [];
     }
 
-    return (data as any[]).map(notification => ({
+    return (data || []).map(notification => ({
       id: notification.id,
       title: notification.title,
       message: notification.message,
@@ -197,6 +198,15 @@ export class DatabaseService {
       return [];
     }
 
-    return (data as any[]) || [];
+    return (data || []).map(profile => ({
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: profile.role as 'admin' | 'member',
+      secret_number: profile.secret_number,
+      is_active: profile.is_active,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at
+    }));
   }
 }

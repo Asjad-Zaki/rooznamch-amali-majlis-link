@@ -52,7 +52,6 @@ export const useAuth = () => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      // Use direct query to avoid type issues
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -62,7 +61,16 @@ export const useAuth = () => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
       } else if (data) {
-        setProfile(data as Profile);
+        setProfile({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role as 'admin' | 'member',
+          secret_number: data.secret_number,
+          is_active: data.is_active,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
