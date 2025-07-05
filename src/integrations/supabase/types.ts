@@ -51,6 +51,108 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          name: string
+          role: string
+          secret_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          name: string
+          role?: string
+          secret_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          role?: string
+          secret_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to_name: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          member_notes: string | null
+          priority: string
+          progress: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_name?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          member_notes?: string | null
+          priority?: string
+          progress?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_name?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          member_notes?: string | null
+          priority?: string
+          progress?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       teamtask_db: {
         Row: {
           created_at: string

@@ -20,7 +20,7 @@ const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('member');
   const [profiles, setProfiles] = useState<any[]>([]);
   
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   // Page load animation
@@ -51,15 +51,31 @@ const AuthPage = () => {
       const { error: signInError } = await signIn(adminEmail, adminPassword);
       
       if (signInError) {
-        setError('غلط ای میل یا پاس ورڈ');
-        setIsLoading(false);
-        return;
-      }
+        // If login fails, try to sign up the admin user
+        if (signInError.message?.includes('Invalid login credentials')) {
+          const { error: signUpError } = await signUp(adminEmail, adminPassword, 'Admin User');
+          
+          if (signUpError) {
+            setError('لاگ ان یا سائن اپ میں خرابی ہوئی');
+            setIsLoading(false);
+            return;
+          }
 
-      toast({
-        title: "لاگ ان کامیاب",
-        description: "آپ کامیابی سے لاگ ان ہو گئے ہیں",
-      });
+          toast({
+            title: "اکاؤنٹ بن گیا",
+            description: "آپ کا اکاؤنٹ کامیابی سے بن گیا اور لاگ ان ہو گئے",
+          });
+        } else {
+          setError('غلط ای میل یا پاس ورڈ');
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        toast({
+          title: "لاگ ان کامیاب",
+          description: "آپ کامیابی سے لاگ ان ہو گئے ہیں",
+        });
+      }
     } catch (err) {
       setError('لاگ ان میں خرابی ہوئی');
       setIsLoading(false);
@@ -278,7 +294,7 @@ const AuthPage = () => {
           {/* Quick login info */}
           <div className="mt-4 text-center text-white/60 text-xs" dir="rtl">
             <p>ٹیسٹ لاگ ان:</p>
-            <p>منتظم: admin@gmail.com / admin123</p>
+            <p>منتظم: asjadzaki2021@gmail.com / admin123</p>
           </div>
         </CardContent>
       </Card>
