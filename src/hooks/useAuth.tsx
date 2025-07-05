@@ -26,7 +26,7 @@ export const useAuth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         setLoading(false);
       }
@@ -39,7 +39,7 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, session.user.email);
         } else {
           setProfile(null);
           setLoading(false);
@@ -50,15 +50,19 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userEmail?: string) => {
+    console.log('Fetching profile for user:', userId, userEmail);
     try {
       // Use direct table query with type assertion
       const { data, error } = await (supabase as any).from('profiles').select('*').eq('id', userId);
 
-      if (error && error.code !== 'PGRST116') {
+      console.log('Profile fetch result:', { data, error });
+
+      if (error) {
         console.error('Error fetching profile:', error);
-        // Fallback: create a default admin profile for testing
-        if (user?.email === 'admin@gmail.com') {
+        // Create default admin profile for admin@gmail.com
+        if (userEmail === 'admin@gmail.com') {
+          console.log('Creating default admin profile');
           setProfile({
             id: userId,
             name: 'Admin User',
@@ -69,8 +73,12 @@ export const useAuth = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
+        } else {
+          console.log('No profile found and not admin, setting loading to false');
+          setProfile(null);
         }
       } else if (data && data.length > 0) {
+        console.log('Profile found, setting profile data');
         const profileData = data[0];
         setProfile({
           id: profileData.id,
@@ -82,23 +90,30 @@ export const useAuth = () => {
           created_at: profileData.created_at,
           updated_at: profileData.updated_at
         });
-      } else if (user?.email === 'admin@gmail.com') {
-        // Create default admin profile
-        setProfile({
-          id: userId,
-          name: 'Admin User',
-          email: 'admin@gmail.com',
-          role: 'admin',
-          secret_number: 'ADMIN123',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+      } else {
+        console.log('No profile data found');
+        // Create default admin profile for admin email
+        if (userEmail === 'admin@gmail.com') {
+          console.log('Creating default admin profile (no data case)');
+          setProfile({
+            id: userId,
+            name: 'Admin User',
+            email: 'admin@gmail.com',
+            role: 'admin',
+            secret_number: 'ADMIN123',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        } else {
+          setProfile(null);
+        }
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error in fetchProfile:', error);
       // Fallback for admin
-      if (user?.email === 'admin@gmail.com') {
+      if (userEmail === 'admin@gmail.com') {
+        console.log('Exception caught, creating admin profile');
         setProfile({
           id: userId,
           name: 'Admin User',
@@ -109,8 +124,11 @@ export const useAuth = () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+      } else {
+        setProfile(null);
       }
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
