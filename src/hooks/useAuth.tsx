@@ -52,8 +52,8 @@ export const useAuth = () => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      // Use raw SQL query to bypass type system
-      const { data, error } = await supabase.rpc('get_profile', { user_id: userId });
+      // Use direct table query with type assertion
+      const { data, error } = await (supabase as any).from('profiles').select('*').eq('id', userId);
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
