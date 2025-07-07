@@ -50,11 +50,12 @@ const TaskManager = ({
   });
 
   const createNotification = (type: Notification['type'], title: string, message: string) => {
-    const newNotification: Omit<Notification, 'id' | 'created_at'> = {
+    const newNotification: Omit<Notification, 'id'> = { // Changed Omit to only exclude 'id'
       title,
       message,
       type,
-      is_read: false // Default to unread
+      is_read: false, // Default to unread
+      created_at: new Date().toISOString() // Explicitly add created_at
     };
     
     createNotificationMutation.mutate(newNotification); // Use mutation to save to DB
