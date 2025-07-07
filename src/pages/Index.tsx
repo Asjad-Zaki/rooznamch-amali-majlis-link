@@ -1,215 +1,127 @@
-import React, { useState } from 'react';
-import LoginForm from '@/components/LoginForm';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Dashboard from '@/components/Dashboard';
 import { User } from '@/components/UserManagement';
 import { Notification } from '@/components/NotificationPanel';
+import { useAuth } from '@/integrations/supabase/auth'; // Import useAuth hook
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 
 const Index = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
-  const [userName, setUserName] = useState('');
-  const [userId, setUserId] = useState('');
-  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // New state for view mode
+  const { session, loading, user: authUser } = useAuth(); // Get session and user from context
+  const navigate = useNavigate();
 
-  // Updated demo users with secret numbers
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      name: 'منتظم',
-      email: 'admin@gmail.com',
-      role: 'admin',
-      password: '1111',
-      secretNumber: '000000',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '2',
-      name: 'احمد علی',
-      email: 'ahmed@example.com',
-      role: 'member',
-      password: 'member123',
-      secretNumber: '123456',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '3',
-      name: 'فاطمہ خان',
-      email: 'fatima@example.com',
-      role: 'member',
-      password: 'member123',
-      secretNumber: '234567',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '4',
-      name: 'محمد حسن',
-      email: 'hassan@example.com',
-      role: 'member',
-      password: 'member123',
-      secretNumber: '345678',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '5',
-      name: 'عائشہ سلیم',
-      email: 'aisha@example.com',
-      role: 'member',
-      password: 'member123',
-      secretNumber: '456789',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-  {
-  id: '6',
-  name: 'مولوی سہیل صاحب',
-  email: 'suhail@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '567890',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '7',
-  name: 'مولوی امجد صاحب',
-  email: 'amjad@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '678901',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '8',
-  name: 'حافظ شفاعت صاحب',
-  email: 'shafat@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '789012',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '9',
-  name: 'حافظ ایاز صاحب',
-  email: 'ayaz@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '890123',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '10',
-  name: 'مولوی احمد صاحب',
-  email: 'ahmed@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '901234',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '11',
-  name: 'مولوی طفیل صاحب',
-  email: 'thufail@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '123457',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '12',
-  name: 'مولوی امتیاز صاحب',
-  email: 'imtiyaz@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '234568',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '13',
-  name: 'مولوی بلال صاحب',
-  email: 'bilal@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '345679',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '14',
-  name: 'مولوی ذاکر صاحب',
-  email: 'zakir@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '456780',
-  createdAt: '2024-01-01',
-  isActive: true
-},
-{
-  id: '15',
-  name: 'مولوی فضل الرحمن صاحب',
-  email: 'zakir@example.com',
-  role: 'member',
-  password: 'member123',
-  secretNumber: '456780',
-  createdAt: '2024-01-01',
-  isActive: true
-}
-
-// ...existing code...
-  ]);
-
-  // Shared notifications state
+  // State for user data from profiles table
+  const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]); // All users from profiles table
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const handleLogin = (role: 'admin' | 'member', name: string, id: string) => {
-    setUserRole(role);
-    setUserName(name);
-    setUserId(id);
-    setViewMode(role); // Set initial view mode to user's role
-    setIsLoggedIn(true);
-  };
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate('/login');
+    }
+  }, [session, loading, navigate]);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserRole('member');
-    setUserName('');
-    setUserId('');
-    setViewMode('member');
+  // Fetch user profile and all users from Supabase
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (authUser) {
+        // Fetch current user's profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          // Handle error, maybe log out or show a message
+          await supabase.auth.signOut();
+          navigate('/login');
+          return;
+        }
+        setCurrentUserProfile(profileData as User);
+
+        // Fetch all users (for admin view)
+        const { data: allUsersData, error: allUsersError } = await supabase
+          .from('profiles')
+          .select('*');
+
+        if (allUsersError) {
+          console.error('Error fetching all users:', allUsersError);
+        } else {
+          setUsers(allUsersData as User[]);
+        }
+      }
+    };
+
+    if (!loading && session && authUser) {
+      fetchUserData();
+    }
+  }, [session, loading, authUser, navigate]);
+
+  // Determine user role and name based on fetched profile
+  const userRole = currentUserProfile?.role || 'member';
+  const userName = currentUserProfile?.name || authUser?.email || 'Guest';
+  const userId = currentUserProfile?.id || authUser?.id || '';
+
+  // View mode state (for admin to switch between admin/member view)
+  const [viewMode, setViewMode] = useState<'admin' | 'member'>(userRole);
+
+  useEffect(() => {
+    if (currentUserProfile) {
+      setViewMode(currentUserProfile.role); // Set initial view mode based on actual role
+    }
+  }, [currentUserProfile]);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleRoleSwitch = () => {
-    // Only admin can switch views
     if (userRole === 'admin') {
       setViewMode(viewMode === 'admin' ? 'member' : 'admin');
     }
   };
 
-  if (!isLoggedIn) {
-    return <LoginForm onLogin={handleLogin} users={users} />;
+  // User management functions (will interact with Supabase in UserManagement component)
+  const handleUpdateUsers = (updatedUsers: User[]) => {
+    setUsers(updatedUsers); // Update local state, actual Supabase updates will be in UserManagement
+  };
+
+  if (loading || !session || !currentUserProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-transparent border-t-blue-500 border-r-purple-500 rounded-full animate-spin shadow-2xl shadow-blue-500/25"></div>
+          <div className="absolute inset-0 w-16 h-16 m-2 border-4 border-transparent border-b-green-500 border-l-cyan-500 rounded-full animate-spin animation-delay-150 shadow-2xl shadow-green-500/25"></div>
+          <div className="absolute inset-0 w-12 h-12 m-4 border-4 border-transparent border-t-pink-500 border-r-yellow-500 rounded-full animate-spin animation-delay-300 shadow-2xl shadow-pink-500/25"></div>
+          <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-white font-medium text-lg animate-pulse">
+            لوڈ ہو رہا ہے...
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Dashboard 
-      userRole={viewMode} // Pass view mode as userRole for UI
+    <Dashboard
+      userRole={viewMode}
       userName={userName}
       userId={userId}
       onLogout={handleLogout}
       onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
       users={users}
-      onUpdateUsers={setUsers}
+      onUpdateUsers={handleUpdateUsers}
       notifications={notifications}
       onUpdateNotifications={setNotifications}
-      viewMode={viewMode} // Pass view mode separately
-      actualRole={userRole} // Pass actual role for permissions
+      viewMode={viewMode}
+      actualRole={userRole}
     />
   );
 };

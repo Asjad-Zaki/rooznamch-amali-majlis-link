@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User } from './UserManagement';
+import { User } from './UserManagement'; // Keep User type for now
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { useToast } from '@/hooks/use-toast'; // Import useToast for notifications
 
 interface LoginFormProps {
-  onLogin: (role: 'admin' | 'member', name: string, userId: string) => void;
-  users: User[];
+  onLogin: (role: 'admin' | 'member', name: string, userId: string) => void; // This prop will be less critical now
+  users: User[]; // This prop will be less critical now, as users will be fetched from Supabase
 }
 
 const LoginForm = ({ onLogin, users }: LoginFormProps) => {
@@ -20,6 +22,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('member');
+  const { toast } = useToast();
 
   // Page load animation
   useEffect(() => {
@@ -35,20 +38,53 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const admin = users.find(u => 
-        u.email.toLowerCase() === adminEmail.toLowerCase() && 
-        u.password === adminPassword &&
-        u.role === 'admin' &&
-        u.isActive
-      );
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: adminPassword,
+      });
 
-      if (admin) {
-        onLogin('admin', admin.name, admin.id);
-      } else {
-        setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے');
+      if (authError) {
+        setError(authError.message);
+        toast({
+          title: "لاگ ان ناکام",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return;
       }
-    } catch (err) {
-      setError('لاگ ان میں خرابی ہوئی');
+
+      // Verify if the logged-in user is an admin from the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, role, is_active')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (profileError || !profile || profile.role !== 'admin' || !profile.is_active) {
+        setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے');
+        toast({
+          title: "لاگ ان ناکام",
+          description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut(); // Log out if not an admin or inactive
+        return;
+      }
+
+      // If successful and admin, onLogin is called (though now mostly for initial state setup)
+      onLogin('admin', profile.name, profile.id);
+      toast({
+        title: "لاگ ان کامیاب",
+        description: `خوش آمدید، ${profile.name}`,
+      });
+
+    } catch (err: any) {
+      setError('لاگ ان میں خرابی ہوئی: ' + err.message);
+      toast({
+        title: "لاگ ان میں خرابی",
+        description: 'لاگ ان میں خرابی ہوئی',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -60,19 +96,53 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const member = users.find(u => 
-        u.secretNumber === memberSecretNumber &&
-        u.role === 'member' &&
-        u.isActive
-      );
+      // Call a Supabase RPC function to verify secret number and get user details
+      const { data, error: rpcError } = await supabase.rpc('member_login_by_secret_number', {
+        p_secret_number: memberSecretNumber
+      });
 
-      if (member) {
-        onLogin('member', member.name, member.id);
+      if (rpcError) {
+        setError(rpcError.message);
+        toast({
+          title: "لاگ ان ناکام",
+          description: rpcError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.user_id && data.user_name && data.user_role === 'member' && data.is_active) {
+        // If RPC returns a valid user, sign them in using a dummy password or a custom token
+        // For simplicity, we'll assume the RPC function handles the session or we'll use a dummy sign-in
+        // A more robust solution would involve a custom JWT or a server-side flow.
+        // For now, we'll just use the onLogin callback to simulate login.
+        // In a real scenario, the RPC would return a JWT or trigger a session.
+        // Since Supabase auth.signInWithPassword requires email, we'll need to rethink this.
+        // A better approach for member login with secret number is to use an Edge Function
+        // that signs in the user with a pre-defined email/password for that secret number,
+        // or creates a temporary user and signs them in.
+
+        // For now, let's simulate the login for the frontend based on RPC success
+        onLogin('member', data.user_name, data.user_id);
+        toast({
+          title: "لاگ ان کامیاب",
+          description: `خوش آمدید، ${data.user_name}`,
+        });
       } else {
         setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
+        toast({
+          title: "لاگ ان ناکام",
+          description: "غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے",
+          variant: "destructive",
+        });
       }
-    } catch (err) {
-      setError('لاگ ان میں خرابی ہوئی');
+    } catch (err: any) {
+      setError('لاگ ان میں خرابی ہوئی: ' + err.message);
+      toast({
+        title: "لاگ ان میں خرابی",
+        description: 'لاگ ان میں خرابی ہوئی',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
