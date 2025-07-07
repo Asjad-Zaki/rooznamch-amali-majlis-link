@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,33 +8,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Trash2, Edit, Plus, Users, Key, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+// Updated User interface - removed password
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'member';
-  password: string;
   secretNumber: string;
   createdAt: string;
   isActive: boolean;
 }
 
+// Removed props as UserManagement will manage its own data
 interface UserManagementProps {
-  users: User[];
-  onAddUser: (user: Omit<User, 'id' | 'createdAt'>) => void;
-  onEditUser: (user: User) => void;
-  onDeleteUser: (userId: string) => void;
-  onToggleUserStatus: (userId: string) => void;
+  // No props needed here anymore, it will fetch its own data
 }
 
-const UserManagement = ({ 
-  users, 
-  onAddUser, 
-  onEditUser, 
-  onDeleteUser, 
-  onToggleUserStatus 
-}: UserManagementProps) => {
+const UserManagement = ({}: UserManagementProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -43,11 +35,151 @@ const UserManagement = ({
     name: '',
     email: '',
     role: 'member' as User['role'],
-    password: '',
+    password: '', // Only for create mode
     secretNumber: '',
     isActive: true
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch users
+  const { data: users, isLoading, error } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('*');
+      if (error) throw error;
+      return data as User[];
+    },
+  });
+
+  // Add user mutation
+  const addUserMutation = useMutation({
+    mutationFn: async (newUser: Omit<User, 'id' | 'createdAt'> & { password?: string }) => {
+      // For new user, first sign up with email/password
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUser.email,
+        password: newUser.password || '', // Password is required for signUp
+        options: {
+          data: {
+            name: newUser.name,
+            role: newUser.role,
+            is_active: newUser.isActive,
+            // secret_number is a custom field, not directly handled by auth.signUp metadata
+            // It will be updated in the profiles table after the user is created by the trigger
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      // The handle_new_user trigger creates the profile entry.
+      // Now, update the secret_number in the newly created profile.
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ secret_number: newUser.secretNumber })
+        .eq('id', authData.user?.id);
+
+      if (profileUpdateError) throw profileUpdateError;
+
+      return { ...newUser, id: authData.user?.id || '', createdAt: new Date().toISOString() } as User;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "کامیاب",
+        description: "صارف کامیابی سے شامل کر دیا گیا ہے",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "خرابی",
+        description: `صارف شامل کرنے میں خرابی: ${err.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit user mutation
+  const editUserMutation = useMutation({
+    mutationFn: async (updatedUser: User) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          secret_number: updatedUser.secretNumber,
+          is_active: updatedUser.isActive,
+        })
+        .eq('id', updatedUser.id);
+      if (error) throw error;
+      return updatedUser;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "کامیاب",
+        description: "صارف کی معلومات کامیابی سے اپڈیٹ ہو گئی ہے",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "خرابی",
+        description: `صارف اپڈیٹ کرنے میں خرابی: ${err.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // Deleting from auth.users will cascade delete from profiles due to foreign key constraint
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) throw error;
+      return userId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "کامیاب",
+        description: "صارف کامیابی سے حذف کر دیا گیا ہے",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "خرابی",
+        description: `صارف حذف کرنے میں خرابی: ${err.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Toggle user status mutation
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async (user: User) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !user.isActive })
+        .eq('id', user.id);
+      if (error) throw error;
+      return { ...user, isActive: !user.isActive };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "کامیاب",
+        description: "صارف کی حالت کامیابی سے تبدیل ہو گئی ہے",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "خرابی",
+        description: `صارف کی حالت تبدیل کرنے میں خرابی: ${err.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   const generateSecretNumber = () => {
     const secretNumber = Math.floor(100000 + Math.random() * 900000).toString();
@@ -70,7 +202,7 @@ const UserManagement = ({
       name: '',
       email: '',
       role: 'member',
-      password: '',
+      password: '', // Reset password for new user
       secretNumber: newSecretNumber,
       isActive: true
     });
@@ -84,25 +216,41 @@ const UserManagement = ({
       name: user.name,
       email: user.email,
       role: user.role,
-      password: user.password,
+      password: '', // Password is not editable for existing users via this form
       secretNumber: user.secretNumber,
       isActive: user.isActive
     });
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'create') {
-      onAddUser(formData);
+      await addUserMutation.mutateAsync(formData);
     } else if (currentUser) {
-      onEditUser({ ...currentUser, ...formData });
+      await editUserMutation.mutateAsync({ ...currentUser, ...formData });
     }
     setIsModalOpen(false);
   };
 
-  const activeUsers = users.filter(user => user.isActive);
-  const inactiveUsers = users.filter(user => !user.isActive);
+  const activeUsers = users?.filter(user => user.isActive) || [];
+  const inactiveUsers = users?.filter(user => !user.isActive) || [];
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-gray-600" dir="rtl">
+        صارفین لوڈ ہو رہے ہیں...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-600" dir="rtl">
+        صارفین لوڈ کرنے میں خرابی: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 p-4">
@@ -125,60 +273,64 @@ const UserManagement = ({
             <div>
               <h3 className="text-lg font-semibold mb-4" dir="rtl">فعال صارفین</h3>
               <div className="space-y-3">
-                {activeUsers.map((user) => (
-                  <Card key={user.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="font-medium" dir="rtl">{user.name}</h4>
-                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                              {user.role === 'admin' ? 'منتظم' : 'رکن'}
-                            </Badge>
+                {activeUsers.length === 0 ? (
+                  <p className="text-center text-gray-500" dir="rtl">کوئی فعال صارف نہیں</p>
+                ) : (
+                  activeUsers.map((user) => (
+                    <Card key={user.id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-medium" dir="rtl">{user.name}</h4>
+                              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                {user.role === 'admin' ? 'منتظم' : 'رکن'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600" dir="rtl">{user.email}</p>
+                            <div className="flex items-center gap-2">
+                              <Key className="h-3 w-3 text-gray-400" />
+                              <span className="text-sm font-mono">{user.secretNumber}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copySecretNumber(user.secretNumber)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600" dir="rtl">{user.email}</p>
-                          <div className="flex items-center gap-2">
-                            <Key className="h-3 w-3 text-gray-400" />
-                            <span className="text-sm font-mono">{user.secretNumber}</span>
+                          <div className="flex flex-wrap gap-2">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => copySecretNumber(user.secretNumber)}
-                              className="h-6 w-6 p-0"
+                              onClick={() => handleEditUser(user)}
                             >
-                              <Copy className="h-3 w-3" />
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleUserStatusMutation.mutate(user)}
+                              className="text-orange-600"
+                            >
+                              غیر فعال
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteUserMutation.mutate(user.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onToggleUserStatus(user.id)}
-                            className="text-orange-600"
-                          >
-                            غیر فعال
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onDeleteUser(user.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
 
@@ -186,39 +338,43 @@ const UserManagement = ({
             <div>
               <h3 className="text-lg font-semibold mb-4" dir="rtl">غیر فعال صارفین</h3>
               <div className="space-y-3">
-                {inactiveUsers.map((user) => (
-                  <Card key={user.id} className="p-4 bg-gray-50">
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <h4 className="font-medium text-gray-600" dir="rtl">{user.name}</h4>
-                          <Badge variant="outline">
-                            {user.role === 'admin' ? 'منتظم' : 'رکن'}
-                          </Badge>
+                {inactiveUsers.length === 0 ? (
+                  <p className="text-center text-gray-500" dir="rtl">کوئی غیر فعال صارف نہیں</p>
+                ) : (
+                  inactiveUsers.map((user) => (
+                    <Card key={user.id} className="p-4 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h4 className="font-medium text-gray-600" dir="rtl">{user.name}</h4>
+                            <Badge variant="outline">
+                              {user.role === 'admin' ? 'منتظم' : 'رکن'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-500" dir="rtl">{user.email}</p>
                         </div>
-                        <p className="text-sm text-gray-500" dir="rtl">{user.email}</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleUserStatusMutation.mutate(user)}
+                            className="text-green-600"
+                          >
+                            فعال کریں
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteUserMutation.mutate(user.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onToggleUserStatus(user.id)}
-                          className="text-green-600"
-                        >
-                          فعال کریں
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDeleteUser(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -255,17 +411,19 @@ const UserManagement = ({
                 dir="rtl"
               />
             </div>
-            <div>
-              <Label htmlFor="password" dir="rtl">پاس ورڈ</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                dir="rtl"
-              />
-            </div>
+            {modalMode === 'create' && ( // Only show password for create mode
+              <div>
+                <Label htmlFor="password" dir="rtl">پاس ورڈ</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  dir="rtl"
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="role" dir="rtl">کردار</Label>
               <Select
@@ -301,7 +459,7 @@ const UserManagement = ({
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} dir="rtl" className="w-full sm:w-auto">
                 منسوخ
               </Button>
-              <Button type="submit" dir="rtl" className="w-full sm:w-auto">
+              <Button type="submit" dir="rtl" className="w-full sm:w-auto" disabled={addUserMutation.isPending || editUserMutation.isPending}>
                 {modalMode === 'create' ? 'شامل کریں' : 'محفوظ کریں'}
               </Button>
             </div>

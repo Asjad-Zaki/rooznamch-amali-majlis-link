@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
 import TaskModal from './TaskModal';
-import UserManagement, { User } from './UserManagement';
+import UserManagement from './UserManagement'; // No longer importing User type from here
 import DashboardStats from './DashboardStats';
 import DashboardCharts from './DashboardCharts';
 import TaskManager from './TaskManager';
@@ -18,22 +18,21 @@ interface DashboardProps {
   userId: string;
   onLogout: () => void;
   onRoleSwitch?: () => void;
-  users: User[];
-  onUpdateUsers: (users: User[]) => void;
+  // Removed users: User[];
+  // Removed onUpdateUsers: (users: User[]) => void;
   notifications: Notification[];
   onUpdateNotifications: (notifications: Notification[]) => void;
-  viewMode?: 'admin' | 'member'; // New prop for view mode
-  actualRole?: 'admin' | 'member'; // New prop to track actual role
+  viewMode?: 'admin' | 'member';
+  actualRole?: 'admin' | 'member';
 }
 
-const Dashboard = ({ 
-  userRole, 
-  userName, 
-  userId, 
-  onLogout, 
-  onRoleSwitch, 
-  users, 
-  onUpdateUsers,
+const Dashboard = ({
+  userRole,
+  userName,
+  userId,
+  onLogout,
+  onRoleSwitch,
+  // Removed users, onUpdateUsers,
   notifications,
   onUpdateNotifications,
   viewMode = userRole,
@@ -246,34 +245,8 @@ const Dashboard = ({
     console.log('Dashboard - Notifications:', notifications);
   }, [tasks, viewMode, actualRole, notifications]);
 
-  // User management functions
-  const handleAddUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    onUpdateUsers([...users, newUser]);
-  };
-
-  const handleEditUser = (user: User) => {
-    onUpdateUsers(users.map(u => u.id === user.id ? user : u));
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      onUpdateUsers(users.filter(u => u.id !== userId));
-    }
-  };
-
-  const handleToggleUserStatus = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      const updatedUser = { ...user, isActive: !user.isActive };
-      onUpdateUsers(users.map(u => u.id === userId ? updatedUser : u));
-    }
-  };
+  // User management functions are now handled internally by UserManagement component
+  // No need for handleAddUser, handleEditUser, handleDeleteUser, handleToggleUserStatus here
 
   if (isLoading) {
     return (
@@ -369,11 +342,7 @@ const Dashboard = ({
               <TabsContent value="users">
                 <div className="transform transition-all duration-500 animate-fade-in-up">
                   <UserManagement
-                    users={users}
-                    onAddUser={handleAddUser}
-                    onEditUser={handleEditUser}
-                    onDeleteUser={handleDeleteUser}
-                    onToggleUserStatus={handleToggleUserStatus}
+                    // No props needed here anymore, UserManagement fetches its own data
                   />
                 </div>
               </TabsContent>

@@ -1,32 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Dashboard from '@/components/Dashboard';
-import { User } from '@/components/UserManagement';
+import { User } from '@/components/UserManagement'; // Keep User type for current user profile
 import { Notification } from '@/components/NotificationPanel';
-import { useAuth } from '@/integrations/supabase/auth'; // Import useAuth hook
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { useAuth } from '@/integrations/supabase/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const { session, loading, user: authUser } = useAuth(); // Get session and user from context
+  const { session, loading, user: authUser } = useAuth();
   const navigate = useNavigate();
 
-  // State for user data from profiles table
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]); // All users from profiles table
+  // Removed users state as UserManagement will fetch its own
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !session) {
       navigate('/login');
     }
   }, [session, loading, navigate]);
 
-  // Fetch user profile and all users from Supabase
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserProfile = async () => {
       if (authUser) {
-        // Fetch current user's profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -35,42 +31,28 @@ const Index = () => {
 
         if (profileError) {
           console.error('Error fetching user profile:', profileError);
-          // Handle error, maybe log out or show a message
           await supabase.auth.signOut();
           navigate('/login');
           return;
         }
         setCurrentUserProfile(profileData as User);
-
-        // Fetch all users (for admin view)
-        const { data: allUsersData, error: allUsersError } = await supabase
-          .from('profiles')
-          .select('*');
-
-        if (allUsersError) {
-          console.error('Error fetching all users:', allUsersError);
-        } else {
-          setUsers(allUsersData as User[]);
-        }
       }
     };
 
     if (!loading && session && authUser) {
-      fetchUserData();
+      fetchUserProfile();
     }
   }, [session, loading, authUser, navigate]);
 
-  // Determine user role and name based on fetched profile
   const userRole = currentUserProfile?.role || 'member';
   const userName = currentUserProfile?.name || authUser?.email || 'Guest';
   const userId = currentUserProfile?.id || authUser?.id || '';
 
-  // View mode state (for admin to switch between admin/member view)
   const [viewMode, setViewMode] = useState<'admin' | 'member'>(userRole);
 
   useEffect(() => {
     if (currentUserProfile) {
-      setViewMode(currentUserProfile.role); // Set initial view mode based on actual role
+      setViewMode(currentUserProfile.role);
     }
   }, [currentUserProfile]);
 
@@ -89,10 +71,10 @@ const Index = () => {
     }
   };
 
-  // User management functions (will interact with Supabase in UserManagement component)
-  const handleUpdateUsers = (updatedUsers: User[]) => {
-    setUsers(updatedUsers); // Update local state, actual Supabase updates will be in UserManagement
-  };
+  // Removed handleUpdateUsers as UserManagement handles its own data
+  // const handleUpdateUsers = (updatedUsers: User[]) => {
+  //   setUsers(updatedUsers);
+  // };
 
   if (loading || !session || !currentUserProfile) {
     return (
@@ -116,8 +98,7 @@ const Index = () => {
       userId={userId}
       onLogout={handleLogout}
       onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
-      users={users}
-      onUpdateUsers={handleUpdateUsers}
+      // Removed users and onUpdateUsers props
       notifications={notifications}
       onUpdateNotifications={setNotifications}
       viewMode={viewMode}
