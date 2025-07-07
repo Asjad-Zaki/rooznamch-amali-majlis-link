@@ -43,7 +43,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
       if (authError) {
-        console.error("Supabase Auth Error:", authError); // Log auth error
         setError(authError.message);
         toast({
           title: "لاگ ان ناکام",
@@ -53,8 +52,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         return;
       }
 
-      console.log("Auth successful. User data:", data.user); // Log user data after auth
-
       // Verify if the logged-in user is an admin from the profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -62,11 +59,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         .eq('id', data.user?.id)
         .single();
 
-      console.log("Profile data from Supabase:", profile); // Log profile data
-      console.log("Profile fetch error:", profileError); // Log profile fetch error
-
       if (profileError || !profile || profile.role !== 'admin' || !profile.is_active) {
-        console.error("Profile validation failed:", { profileError, profile }); // Log why validation failed
         setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",
@@ -84,7 +77,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
     } catch (err: any) {
-      console.error("Unexpected login error:", err); // Log unexpected errors
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -113,7 +105,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Member login Edge Function error:", result.error); // Log Edge Function error
         setError(result.error || 'لاگ ان میں خرابی ہوئی');
         toast({
           title: "لاگ ان ناکام",
@@ -123,12 +114,9 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         return;
       }
 
-      console.log("Member login Edge Function result:", result); // Log Edge Function result
-
       if (result.session) {
         const { error: setSessionError } = await supabase.auth.setSession(result.session);
         if (setSessionError) {
-          console.error("Set session error:", setSessionError); // Log set session error
           setError(setSessionError.message);
           toast({
             title: "لاگ ان ناکام",
@@ -152,7 +140,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         });
       }
     } catch (err: any) {
-      console.error("Unexpected member login error:", err); // Log unexpected errors
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
