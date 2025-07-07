@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import TaskBoard from './TaskBoard';
 import TaskModal from './TaskModal';
-import UserManagement from './UserManagement'; // No longer importing User type from here
+import UserManagement from './UserManagement';
 import DashboardStats from './DashboardStats';
 import DashboardCharts from './DashboardCharts';
 import TaskManager from './TaskManager';
@@ -11,6 +11,8 @@ import { useNotificationHandler } from './NotificationHandler';
 import { Task } from './TaskCard';
 import { Notification } from './NotificationPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
@@ -18,8 +20,6 @@ interface DashboardProps {
   userId: string;
   onLogout: () => void;
   onRoleSwitch?: () => void;
-  // Removed users: User[];
-  // Removed onUpdateUsers: (users: User[]) => void;
   notifications: Notification[];
   onUpdateNotifications: (notifications: Notification[]) => void;
   viewMode?: 'admin' | 'member';
@@ -32,187 +32,23 @@ const Dashboard = ({
   userId,
   onLogout,
   onRoleSwitch,
-  // Removed users, onUpdateUsers,
   notifications,
   onUpdateNotifications,
   viewMode = userRole,
   actualRole = userRole
 }: DashboardProps) => {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'ویب سائٹ کی ڈیزائن',
-      description: 'نئی ویب سائٹ کے لیے UI/UX ڈیزائن تیار کرنا',
-      status: 'todo',
-      priority: 'high',
-      assignedTo: 'احمد علی',
-      createdAt: '2024-01-01',
-      dueDate: '2024-01-15',
-      progress: 0,
-      memberNotes: ''
-    },
-    {
-      id: '2',
-      title: 'ڈیٹابیس کا سیٹ اپ',
-      description: 'پروجیکٹ کے لیے ڈیٹابیس کی تشکیل اور کنفیگریشن',
-      status: 'inprogress',
-      priority: 'medium',
-      assignedTo: 'فاطمہ خان',
-      createdAt: '2024-01-02',
-      dueDate: '2024-01-20',
-      progress: 30,
-      memberNotes: 'ڈیٹابیس کی بنیادی ساخت مکمل ہو گئی'
-    },
-    {
-      id: '3',
-      title: 'ٹیسٹنگ اور ڈیبگنگ',
-      description: 'سافٹ ویئر میں موجود مسائل کی تشخیص اور حل',
-      status: 'review',
-      priority: 'high',
-      assignedTo: 'محمد حسن',
-      createdAt: '2024-01-03',
-      dueDate: '2024-01-18',
-      progress: 80,
-      memberNotes: 'اہم bugs حل ہو گئے، فائنل ٹیسٹنگ باقی ہے'
-    },
-    {
-      id: '4',
-      title: 'دستاویزات کی تیاری',
-      description: 'پروجیکٹ کی مکمل دستاویزات اور رپورٹس',
-      status: 'done',
-      priority: 'low',
-      assignedTo: 'عائشہ سلیم',
-      createdAt: '2024-01-04',
-      dueDate: '2024-01-10',
-      progress: 100,
-      memberNotes: 'دستاویزات مکمل اور جمع کر دیے گئے'
-    },
-    
-    // Example task objects for ids 6 to 15
-{
-  id: '6',
-  title: 'رپورٹس کا جائزہ',
-  description: 'ماہانہ رپورٹس کی تیاری اور جائزہ',
-  status: 'todo',
-  priority: 'high',
-  assignedTo: 'مولوی سہیل صاحب',
-  createdAt: '2024-01-06',
-  dueDate: '2024-01-25',
-  progress: 0,
-  memberNotes: 'رپورٹس کے لیے ڈیٹا اکٹھا کیا جا رہا ہے'
-},
-{
-  id: '7',
-  title: 'اجلاس کی تیاری',
-  description: 'اگلے ہفتے کے اجلاس کے ایجنڈے کی تیاری',
-  status: 'inprogress',
-  priority: 'medium',
-  assignedTo: 'مولوی امجد صاحب',
-  createdAt: '2024-01-07',
-  dueDate: '2024-01-22',
-  progress: 40,
-  memberNotes: 'ایجنڈے کے نکات تیار کیے جا رہے ہیں'
-},
-{
-  id: '8',
-  title: 'تعلیمی مواد کی تیاری',
-  description: 'طلبہ کے لیے تعلیمی مواد تیار کرنا',
-  status: 'todo',
-  priority: 'high',
-  assignedTo: 'حافظ شفاعت صاحب',
-  createdAt: '2024-01-08',
-  dueDate: '2024-01-28',
-  progress: 0,
-  memberNotes: 'مواد کے موضوعات پر مشاورت جاری ہے'
-},
-{
-  id: '9',
-  title: 'حاضری کا ریکارڈ',
-  description: 'حاضری کے ریکارڈ کی جانچ اور اپڈیٹ',
-  status: 'inprogress',
-  priority: 'low',
-  assignedTo: 'حافظ ایاز صاحب',
-  createdAt: '2024-01-09',
-  dueDate: '2024-01-18',
-  progress: 60,
-  memberNotes: 'ریکارڈ اپڈیٹ کیا جا رہا ہے'
-},
-{
-  id: '10',
-  title: 'مالی امور کی نگرانی',
-  description: 'مالی ریکارڈز اور اخراجات کی نگرانی',
-  status: 'todo',
-  priority: 'high',
-  assignedTo: 'مولوی احمد صاحب',
-  createdAt: '2024-01-10',
-  dueDate: '2024-01-30',
-  progress: 0,
-  memberNotes: 'مالی ڈیٹا اکٹھا کیا جا رہا ہے'
-},
-{
-  id: '11',
-  title: 'کمیٹی ممبران کی فہرست',
-  description: 'کمیٹی ممبران کی تازہ فہرست تیار کرنا',
-  status: 'done',
-  priority: 'medium',
-  assignedTo: 'مولوی طفیل صاحب',
-  createdAt: '2024-01-11',
-  dueDate: '2024-01-15',
-  progress: 100,
-  memberNotes: 'فہرست مکمل اور جمع کرا دی گئی'
-},
-{
-  id: '12',
-  title: 'نئے ممبران کی رجسٹریشن',
-  description: 'نئے ممبران کی رجسٹریشن کا عمل',
-  status: 'inprogress',
-  priority: 'medium',
-  assignedTo: 'مولوی امتیاز صاحب',
-  createdAt: '2024-01-12',
-  dueDate: '2024-01-27',
-  progress: 50,
-  memberNotes: 'کچھ ممبران کا ڈیٹا باقی ہے'
-},
-{
-  id: '13',
-  title: 'تعلیمی ورکشاپ',
-  description: 'ورکشاپ کے انتظامات اور دعوت نامے',
-  status: 'todo',
-  priority: 'low',
-  assignedTo: 'مولوی بلال صاحب',
-  createdAt: '2024-01-13',
-  dueDate: '2024-01-29',
-  progress: 0,
-  memberNotes: 'ورکشاپ کی تاریخ طے ہونا باقی ہے'
-},
-{
-  id: '14',
-  title: 'سالانہ رپورٹ',
-  description: 'سالانہ رپورٹ کی تیاری اور جمع',
-  status: 'todo',
-  priority: 'high',
-  assignedTo: 'مولوی ذاکر صاحب',
-  createdAt: '2024-01-14',
-  dueDate: '2024-01-31',
-  progress: 0,
-  memberNotes: 'ڈیٹا اکٹھا کیا جا رہا ہے'
-},
-{
-  id: '15',
-  title: 'اجتماعی پروگرام',
-  description: 'اجتماعی پروگرام کے انتظامات',
-  status: 'inprogress',
-  priority: 'medium',
-  assignedTo: 'مولوی فضل الرحمن صاحب',
-  createdAt: '2024-01-15',
-  dueDate: '2024-01-28',
-  progress: 20,
-  memberNotes: 'پروگرام کی جگہ اور تاریخ زیر غور ہیں'
-}
-  ]);
-
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true); // Separate loading state for initial app load
   const [activeTab, setActiveTab] = useState('tasks');
+
+  // Fetch tasks from Supabase
+  const { data: tasks, isLoading: isLoadingTasks, error: tasksError } = useQuery<Task[]>({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('tasks').select('*');
+      if (error) throw error;
+      return data as Task[];
+    },
+  });
 
   // Use notification handler hook
   const notificationHandler = useNotificationHandler({
@@ -222,18 +58,18 @@ const Dashboard = ({
 
   // Initialize task manager
   const taskManager = TaskManager({
-    tasks,
-    onUpdateTasks: setTasks,
+    tasks: tasks || [], // Pass fetched tasks, or empty array if loading/error
+    onUpdateTasks: (updatedTasks) => { /* This is now handled by react-query invalidation */ },
     userRole: actualRole, // Use actual role for permissions
     userName,
     notifications,
     onUpdateNotifications
   });
 
-  // Loading animation
+  // Initial loading animation
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      setIsLoadingInitial(false);
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -245,10 +81,7 @@ const Dashboard = ({
     console.log('Dashboard - Notifications:', notifications);
   }, [tasks, viewMode, actualRole, notifications]);
 
-  // User management functions are now handled internally by UserManagement component
-  // No need for handleAddUser, handleEditUser, handleDeleteUser, handleToggleUserStatus here
-
-  if (isLoading) {
+  if (isLoadingInitial || isLoadingTasks) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="relative">
@@ -262,6 +95,14 @@ const Dashboard = ({
             لوڈ ہو رہا ہے...
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (tasksError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-100 text-red-800">
+        <p dir="rtl">ٹاسکس لوڈ کرنے میں خرابی: {tasksError.message}</p>
       </div>
     );
   }
@@ -315,18 +156,18 @@ const Dashboard = ({
               <TabsContent value="tasks" className="space-y-4 sm:space-y-6 lg:space-y-8">
                 {/* Stats with Staggered Animation */}
                 <div className="transform transition-all duration-500 animate-slide-in-from-left">
-                  <DashboardStats tasks={tasks} userRole={viewMode} userName={userName} />
+                  <DashboardStats tasks={tasks || []} userRole={viewMode} userName={userName} />
                 </div>
                 
                 {/* Charts with Delay Animation */}
                 <div className="transform transition-all duration-500 animate-slide-in-from-right animation-delay-200">
-                  <DashboardCharts tasks={tasks} />
+                  <DashboardCharts tasks={tasks || []} />
                 </div>
                 
                 {/* Task Board with Final Animation */}
                 <div className="transform transition-all duration-500 animate-fade-in-up animation-delay-400">
                   <TaskBoard
-                    tasks={tasks}
+                    tasks={tasks || []}
                     userRole={viewMode}
                     userName={userName}
                     userId={userId}
@@ -352,12 +193,12 @@ const Dashboard = ({
           <div className="space-y-4 sm:space-y-6 lg:space-y-8 transform transition-all duration-700 animate-fade-in-up">
             {/* Member View with Enhanced Animations */}
             <div className="transform transition-all duration-500 animate-slide-in-from-left">
-              <DashboardStats tasks={tasks} userRole={viewMode} userName={userName} />
+              <DashboardStats tasks={tasks || []} userRole={viewMode} userName={userName} />
             </div>
             
             <div className="transform transition-all duration-500 animate-fade-in-up animation-delay-300">
               <TaskBoard
-                tasks={tasks}
+                tasks={tasks || []}
                 userRole={viewMode}
                 userName={userName}
                 userId={userId}

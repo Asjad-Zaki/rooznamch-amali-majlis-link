@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Task } from './TaskCard';
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  onSave: (task: Omit<Task, 'id' | 'created_at'>) => void; // Updated to created_at
   task?: Task | null;
   mode: 'create' | 'edit';
 }
@@ -22,10 +21,10 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
     description: '',
     status: 'todo' as Task['status'],
     priority: 'medium' as Task['priority'],
-    assignedTo: '',
-    dueDate: '',
+    assigned_to_name: '', // Changed to assigned_to_name
+    due_date: '', // Changed to due_date
     progress: 0,
-    memberNotes: ''
+    member_notes: '' // Changed to member_notes
   });
 
   useEffect(() => {
@@ -35,10 +34,10 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
         description: task.description,
         status: task.status,
         priority: task.priority,
-        assignedTo: task.assignedTo,
-        dueDate: task.dueDate,
+        assigned_to_name: task.assigned_to_name, // Use assigned_to_name
+        due_date: task.due_date, // Use due_date
         progress: task.progress,
-        memberNotes: task.memberNotes
+        member_notes: task.member_notes // Use member_notes
       });
     } else {
       setFormData({
@@ -46,10 +45,10 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
         description: '',
         status: 'todo',
         priority: 'medium',
-        assignedTo: '',
-        dueDate: '',
+        assigned_to_name: '',
+        due_date: '',
         progress: 0,
-        memberNotes: ''
+        member_notes: ''
       });
     }
   }, [task, isOpen]);
@@ -90,11 +89,11 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
             />
           </div>
           <div>
-            <Label htmlFor="assignedTo" dir="rtl">ذمہ دار</Label>
+            <Label htmlFor="assigned_to_name" dir="rtl">ذمہ دار</Label> {/* Changed to assigned_to_name */}
             <Input
-              id="assignedTo"
-              value={formData.assignedTo}
-              onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+              id="assigned_to_name"
+              value={formData.assigned_to_name}
+              onChange={(e) => setFormData({ ...formData, assigned_to_name: e.target.value })}
               required
               dir="rtl"
             />
@@ -133,12 +132,12 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
             </Select>
           </div>
           <div>
-            <Label htmlFor="dueDate" dir="rtl">آخری تاریخ</Label>
+            <Label htmlFor="due_date" dir="rtl">آخری تاریخ</Label> {/* Changed to due_date */}
             <Input
-              id="dueDate"
+              id="due_date"
               type="date"
-              value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+              value={formData.due_date}
+              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
               required
             />
           </div>

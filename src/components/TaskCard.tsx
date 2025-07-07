@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,11 +13,11 @@ export interface Task {
   description: string;
   status: 'todo' | 'inprogress' | 'review' | 'done';
   priority: 'low' | 'medium' | 'high';
-  assignedTo: string;
-  createdAt: string;
-  dueDate: string;
+  assigned_to_name: string; // Changed from assignedTo to assigned_to_name
+  created_at: string; // Changed from createdAt to created_at
+  due_date: string; // Changed from dueDate to due_date
   progress: number;
-  memberNotes: string;
+  member_notes: string; // Changed from memberNotes to member_notes
 }
 
 interface TaskCardProps {
@@ -35,7 +34,7 @@ interface TaskCardProps {
 const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatusChange, onMemberTaskUpdate }: TaskCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [progress, setProgress] = useState(task.progress);
-  const [memberNotes, setMemberNotes] = useState(task.memberNotes);
+  const [memberNotes, setMemberNotes] = useState(task.member_notes); // Use member_notes
 
   const priorityColors = {
     low: 'bg-green-100 text-green-800',
@@ -57,13 +56,13 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
   };
 
   const handleMemberUpdate = () => {
-    if (onMemberTaskUpdate && task.assignedTo === userName) {
+    if (onMemberTaskUpdate && task.assigned_to_name === userName) { // Use assigned_to_name
       onMemberTaskUpdate(task.id, progress, memberNotes);
       setIsEditing(false);
     }
   };
 
-  const canMemberEdit = userRole === 'member' && task.assignedTo === userName;
+  const canMemberEdit = userRole === 'member' && task.assigned_to_name === userName; // Use assigned_to_name
 
   return (
     <Card className="mb-4 hover:shadow-md transition-shadow">
@@ -112,7 +111,7 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
             ترجیح: {priorityLabels[task.priority]}
           </Badge>
           <Badge variant="outline" className="text-xs" dir="rtl">
-            ذمہ دار: {task.assignedTo}
+            ذمہ دار: {task.assigned_to_name} {/* Use assigned_to_name */}
           </Badge>
         </div>
 
@@ -131,9 +130,9 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
         </div>
 
         {/* Member Notes */}
-        {task.memberNotes && (
+        {task.member_notes && ( // Use member_notes
           <div className="mb-3 p-2 bg-blue-50 rounded text-xs sm:text-sm" dir="rtl">
-            <strong>رکن کی رپورٹ:</strong> {task.memberNotes}
+            <strong>رکن کی رپورٹ:</strong> {task.member_notes} {/* Use member_notes */}
           </div>
         )}
 
@@ -188,7 +187,7 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
         )}
 
         <div className="text-xs text-gray-500 mb-3" dir="rtl">
-          <div>آخری تاریخ: {new Date(task.dueDate).toLocaleDateString('ur-PK')}</div>
+          <div>آخری تاریخ: {new Date(task.due_date).toLocaleDateString('ur-PK')}</div> {/* Use due_date */}
         </div>
 
         {/* Only show status change buttons for admins */}

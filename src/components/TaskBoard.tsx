@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TaskCard, { Task } from './TaskCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +40,7 @@ const TaskBoard = ({
     // For members, show only their assigned tasks
     if (userRole === 'member') {
       filteredTasks = filteredTasks.filter(task => 
-        task.assignedTo && task.assignedTo.toLowerCase() === userName.toLowerCase()
+        task.assigned_to_name && task.assigned_to_name.toLowerCase() === userName.toLowerCase() // Use assigned_to_name
       );
     }
     
