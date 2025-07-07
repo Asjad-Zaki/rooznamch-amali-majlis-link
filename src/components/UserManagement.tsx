@@ -48,7 +48,16 @@ const UserManagement = ({}: UserManagementProps) => {
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*');
       if (error) throw error;
-      return data as User[];
+      // Explicitly map snake_case from DB to camelCase for the User interface
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        email: item.email,
+        role: item.role,
+        secretNumber: item.secret_number, 
+        createdAt: item.created_at,       
+        isActive: item.is_active          
+      })) as User[];
     },
   });
 
