@@ -226,6 +226,14 @@ const UserManagement = ({}: UserManagementProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'create') {
+      if (formData.password.length < 6) {
+        toast({
+          title: "خرابی",
+          description: "پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے",
+          variant: "destructive",
+        });
+        return;
+      }
       await addUserMutation.mutateAsync(formData);
     } else if (currentUser) {
       await editUserMutation.mutateAsync({ ...currentUser, ...formData });
