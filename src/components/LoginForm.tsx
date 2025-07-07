@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User } from './UserManagement'; // Keep User type for now
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import { useToast } from '@/hooks/use-toast'; // Import useToast for notifications
+import { User } from './UserManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface LoginFormProps {
-  onLogin: (role: 'admin' | 'member', name: string, userId: string) => void; // This prop will be less critical now
-  users: User[]; // This prop will be less critical now, as users will be fetched from Supabase
+  onLogin: (role: 'admin' | 'member', name: string, userId: string) => void;
+  users: User[];
 }
 
 const LoginForm = ({ onLogin, users }: LoginFormProps) => {
@@ -24,7 +24,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
   const [activeTab, setActiveTab] = useState('member');
   const { toast } = useToast();
 
-  // Page load animation
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsPageLoaded(true);
@@ -44,6 +43,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
       if (authError) {
+        console.error("Supabase Auth Error:", authError); // Log auth error
         setError(authError.message);
         toast({
           title: "لاگ ان ناکام",
@@ -53,6 +53,8 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         return;
       }
 
+      console.log("Auth successful. User data:", data.user); // Log user data after auth
+
       // Verify if the logged-in user is an admin from the profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -60,18 +62,21 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         .eq('id', data.user?.id)
         .single();
 
+      console.log("Profile data from Supabase:", profile); // Log profile data
+      console.log("Profile fetch error:", profileError); // Log profile fetch error
+
       if (profileError || !profile || profile.role !== 'admin' || !profile.is_active) {
+        console.error("Profile validation failed:", { profileError, profile }); // Log why validation failed
         setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",
           description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے",
           variant: "destructive",
         });
-        await supabase.auth.signOut(); // Log out if not an admin or inactive
+        await supabase.auth.signOut();
         return;
       }
 
-      // If successful and admin, onLogin is called (though now mostly for initial state setup)
       onLogin('admin', profile.name, profile.id);
       toast({
         title: "لاگ ان کامیاب",
@@ -79,6 +84,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
     } catch (err: any) {
+      console.error("Unexpected login error:", err); // Log unexpected errors
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -96,12 +102,10 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // Call the Edge Function for member login
       const response = await fetch('https://vvzrfdtrtjbyxtwkdzsa.supabase.co/functions/v1/member-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // No need for Authorization header here, as the Edge Function uses the service role key
         },
         body: JSON.stringify({ secret_number: memberSecretNumber }),
       });
@@ -109,6 +113,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error("Member login Edge Function error:", result.error); // Log Edge Function error
         setError(result.error || 'لاگ ان میں خرابی ہوئی');
         toast({
           title: "لاگ ان ناکام",
@@ -118,10 +123,12 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         return;
       }
 
+      console.log("Member login Edge Function result:", result); // Log Edge Function result
+
       if (result.session) {
-        // Set the Supabase session using the session data from the Edge Function
         const { error: setSessionError } = await supabase.auth.setSession(result.session);
         if (setSessionError) {
+          console.error("Set session error:", setSessionError); // Log set session error
           setError(setSessionError.message);
           toast({
             title: "لاگ ان ناکام",
@@ -145,6 +152,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         });
       }
     } catch (err: any) {
+      console.error("Unexpected member login error:", err); // Log unexpected errors
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -158,37 +166,29 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-3 sm:p-4 lg:p-6 relative overflow-hidden">
-      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Primary floating orbs */}
         <div className="absolute top-1/4 left-1/4 w-32 h-32 sm:w-40 sm:h-40 lg:w-64 lg:h-64 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-float"></div>
         <div className="absolute top-3/4 right-1/4 w-28 h-28 sm:w-36 sm:h-36 lg:w-56 lg:h-56 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float animation-delay-1000"></div>
         <div className="absolute bottom-1/4 left-1/3 w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full blur-3xl animate-float animation-delay-2000"></div>
         
-        {/* Secondary accent orbs */}
         <div className="absolute top-1/2 right-1/3 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-500/15 to-orange-500/15 rounded-full blur-2xl animate-pulse"></div>
         <div className="absolute bottom-1/3 right-1/2 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-indigo-500/15 to-violet-500/15 rounded-full blur-2xl animate-pulse animation-delay-1500"></div>
         
-        {/* Floating particles */}
         <div className="absolute top-1/6 left-2/3 w-3 h-3 bg-white/30 rounded-full animate-ping"></div>
         <div className="absolute bottom-1/6 left-1/6 w-2 h-2 bg-blue-400/40 rounded-full animate-ping animation-delay-500"></div>
         <div className="absolute top-2/3 right-1/6 w-4 h-4 bg-purple-400/30 rounded-full animate-ping animation-delay-1000"></div>
       </div>
 
-      {/* Geometric patterns */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 w-8 h-8 border border-white rotate-45 animate-spin-slow"></div>
         <div className="absolute bottom-20 right-20 w-6 h-6 border border-white rotate-12 animate-spin-slow animation-delay-2000"></div>
         <div className="absolute top-1/2 left-20 w-4 h-4 bg-white rounded-full animate-pulse"></div>
       </div>
 
-      {/* Main Login Card */}
       <Card className={`w-full max-w-sm sm:max-w-md lg:max-w-lg relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/50 transition-all duration-1000 ${isPageLoaded ? 'animate-card-entrance' : 'opacity-0 scale-90'}`}>
-        {/* Card glow effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-lg blur-xl animate-glow-pulse"></div>
         
         <CardHeader className="text-center pb-4 sm:pb-6 relative z-10">
-          {/* Logo with 3D effect */}
           <div className="flex justify-center mb-4 sm:mb-6">
             <div className="relative group">
               <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
@@ -211,7 +211,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         
         <CardContent className="relative z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Enhanced TabsList with 3D effects */}
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg p-1 transform transition-all duration-500 animate-slide-up">
               <TabsTrigger 
                 value="member" 
@@ -229,7 +228,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
               </TabsTrigger>
             </TabsList>
             
-            {/* Member Login Tab */}
             <TabsContent value="member" className="transform transition-all duration-500 animate-fade-in-up">
               <div className="space-y-4 sm:space-y-5">
                 <div className="space-y-2">
@@ -274,7 +272,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
               </div>
             </TabsContent>
             
-            {/* Admin Login Tab */}
             <TabsContent value="admin" className="transform transition-all duration-500 animate-fade-in-up">
               <form onSubmit={handleAdminLogin} className="space-y-4 sm:space-y-5">
                 <div className="space-y-2">
@@ -334,7 +331,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
             </TabsContent>
           </Tabs>
           
-          {/* Enhanced Error Alert */}
           {error && (
             <Alert variant="destructive" className="mt-4 sm:mt-6 bg-red-500/10 border border-red-500/30 backdrop-blur-sm animate-shake">
               <AlertDescription dir="rtl" className="text-sm text-red-200">
@@ -347,9 +343,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Custom Styles */}
       <style>{`
-        /* Advanced Animations */
         @keyframes card-entrance {
           0% {
             opacity: 0;
@@ -483,7 +477,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
           animation-delay: 2s;
         }
 
-        /* Custom scrollbar for better UX */
         ::-webkit-scrollbar {
           width: 6px;
         }
@@ -501,7 +494,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
           background: rgba(255, 255, 255, 0.5);
         }
 
-        /* Enhanced focus states */
         .focus-visible {
           outline: 2px solid rgba(59, 130, 246, 0.5);
           outline-offset: 2px;
