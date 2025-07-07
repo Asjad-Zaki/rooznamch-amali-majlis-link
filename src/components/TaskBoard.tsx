@@ -57,7 +57,7 @@ const TaskBoard = ({
         console.log(`TaskBoard - ${column.title} tasks:`, columnTasks);
         
         return (
-          <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
+          <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500 card-3d`}>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">

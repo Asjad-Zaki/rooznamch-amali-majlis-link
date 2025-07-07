@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +60,7 @@ const NotificationPanel = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-end p-4">
-      <Card className="w-96 max-h-[80vh] overflow-hidden">
+      <Card className="w-96 max-h-[80vh] overflow-hidden glass">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg" dir="rtl">اطلاعات</CardTitle>

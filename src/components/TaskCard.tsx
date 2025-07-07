@@ -65,7 +65,7 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
   const canMemberEdit = userRole === 'member' && task.assigned_to_name === userName; // Use assigned_to_name
 
   return (
-    <Card className="mb-4 hover:shadow-md transition-shadow">
+    <Card className="mb-4 hover:shadow-md transition-shadow card-3d">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start gap-2">
           <CardTitle className="text-xs sm:text-sm font-medium flex-1" dir="rtl">{task.title}</CardTitle>
