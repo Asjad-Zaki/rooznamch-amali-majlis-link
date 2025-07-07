@@ -8,9 +8,9 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'task_created' | 'task_updated' | 'task_deleted';
-  timestamp: string;
-  read: boolean;
+  type: 'task_created' | 'task_updated' | 'task_deleted' | 'info'; // Added 'info' type for general notifications
+  created_at: string; // Changed from 'timestamp' to 'created_at' to match Supabase
+  is_read: boolean; // Changed from 'read' to 'is_read' to match Supabase
 }
 
 interface NotificationPanelProps {
@@ -32,7 +32,7 @@ const NotificationPanel = ({
 }: NotificationPanelProps) => {
   if (!isOpen) return null;
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -42,6 +42,7 @@ const NotificationPanel = ({
         return <FilePenLine className="h-5 w-5 text-blue-500" />;
       case 'task_deleted':
         return <Trash2 className="h-5 w-5 text-red-500" />;
+      case 'info':
       default:
         return <Info className="h-5 w-5 text-gray-500" />;
     }
@@ -55,6 +56,7 @@ const NotificationPanel = ({
         return 'ٹاسک اپڈیٹ';
       case 'task_deleted':
         return 'ٹاسک حذف';
+      case 'info':
       default:
         return 'اطلاع';
     }
@@ -105,7 +107,7 @@ const NotificationPanel = ({
                 <div
                   key={notification.id}
                   className={`p-3 rounded-lg border relative group transition-all duration-200 hover:shadow-md ${
-                    notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'
+                    notification.is_read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -116,7 +118,7 @@ const NotificationPanel = ({
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {!notification.read && (
+                      {!notification.is_read && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -145,7 +147,7 @@ const NotificationPanel = ({
                     {notification.message}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {new Date(notification.timestamp).toLocaleString('ur-PK')}
+                    {new Date(notification.created_at).toLocaleString('ur-PK')}
                   </p>
                 </div>
               ))}

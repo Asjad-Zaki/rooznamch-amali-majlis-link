@@ -33,7 +33,7 @@ const Header = ({ userRole, userName, onLogout, onRoleSwitch, notifications = 0,
           {/* User Actions Section */}
           <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 order-2 sm:order-2 flex-wrap justify-center sm:justify-end">
             {/* Notification Bell */}
-            <div className="relative">
+            <div className="relative z-20"> {/* Increased z-index for visibility */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -43,7 +43,7 @@ const Header = ({ userRole, userName, onLogout, onRoleSwitch, notifications = 0,
                 <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {notifications > 0 && (
                   <Badge 
-                    className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs min-w-0"
+                    className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs min-w-0 rounded-full" // Ensure rounded-full
                   >
                     {notifications > 9 ? '9+' : notifications}
                   </Badge>
@@ -99,4 +99,4 @@ const Header = ({ userRole, userName, onLogout, onRoleSwitch, notifications = 0,
   );
 };
 
-export default Header;  
+export default Header;

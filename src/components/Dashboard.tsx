@@ -20,8 +20,8 @@ interface DashboardProps {
   userId: string;
   onLogout: () => void;
   onRoleSwitch?: () => void;
-  notifications: Notification[];
-  onUpdateNotifications: (notifications: Notification[]) => void;
+  notifications: Notification[]; // This prop will now be managed internally by Dashboard's fetch
+  onUpdateNotifications: (notifications: Notification[]) => void; // This prop will now be managed internally by Dashboard's fetch
   viewMode?: 'admin' | 'member';
   actualRole?: 'admin' | 'member';
 }
@@ -32,12 +32,12 @@ const Dashboard = ({
   userId,
   onLogout,
   onRoleSwitch,
-  notifications,
-  onUpdateNotifications,
+  // notifications, // No longer directly passed as prop, fetched internally
+  // onUpdateNotifications, // No longer directly passed as prop, managed by react-query
   viewMode = userRole,
   actualRole = userRole
 }: DashboardProps) => {
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true); // Separate loading state for initial app load
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
 
   // Fetch tasks from Supabase
@@ -50,20 +50,29 @@ const Dashboard = ({
     },
   });
 
+  // Fetch notifications from Supabase
+  const { data: notifications, isLoading: isLoadingNotifications, error: notificationsError } = useQuery<Notification[]>({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Notification[];
+    },
+  });
+
   // Use notification handler hook
   const notificationHandler = useNotificationHandler({
-    notifications,
-    onUpdateNotifications
+    notifications: notifications || [], // Pass fetched notifications
   });
 
   // Initialize task manager
   const taskManager = TaskManager({
-    tasks: tasks || [], // Pass fetched tasks, or empty array if loading/error
-    onUpdateTasks: (updatedTasks) => { /* This is now handled by react-query invalidation */ },
-    userRole: actualRole, // Use actual role for permissions
+    tasks: tasks || [],
+    onUpdateTasks: () => {}, // No longer needed as react-query handles invalidation
+    userRole: actualRole,
     userName,
-    notifications,
-    onUpdateNotifications
+    notifications: notifications || [], // Pass fetched notifications
+    onUpdateNotifications: () => {} // No longer needed as react-query handles invalidation
   });
 
   // Initial loading animation
@@ -81,7 +90,7 @@ const Dashboard = ({
     console.log('Dashboard - Notifications:', notifications);
   }, [tasks, viewMode, actualRole, notifications]);
 
-  if (isLoadingInitial || isLoadingTasks) {
+  if (isLoadingInitial || isLoadingTasks || isLoadingNotifications) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="relative">
@@ -103,6 +112,14 @@ const Dashboard = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-100 text-red-800">
         <p dir="rtl">ٹاسکس لوڈ کرنے میں خرابی: {tasksError.message}</p>
+      </div>
+    );
+  }
+
+  if (notificationsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-100 text-red-800">
+        <p dir="rtl">اطلاعات لوڈ کرنے میں خرابی: {notificationsError.message}</p>
       </div>
     );
   }
@@ -224,7 +241,7 @@ const Dashboard = ({
         {/* Enhanced Notification Panel */}
         <div className="transform transition-all duration-300">
           <NotificationPanel
-            notifications={notifications}
+            notifications={notifications || []} // Pass fetched notifications
             isOpen={notificationHandler.isNotificationPanelOpen}
             onClose={() => notificationHandler.setIsNotificationPanelOpen(false)}
             onMarkAsRead={notificationHandler.handleMarkAsRead}

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import TaskModal from './TaskModal';
 import { Task } from './TaskCard';
-import { Notification } from './NotificationPanel';
+import { Notification } from './NotificationPanel'; // Import updated Notification interface
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface TaskManagerProps {
   tasks: Task[];
-  onUpdateTasks: (tasks: Task[]) => void;
+  onUpdateTasks: (tasks: Task[]) => void; // This prop will become less relevant as data is fetched via react-query
   userRole: 'admin' | 'member';
   userName: string;
-  notifications: Notification[];
-  onUpdateNotifications: (notifications: Notification[]) => void;
+  notifications: Notification[]; // This prop will become less relevant as data is fetched via react-query
+  onUpdateNotifications: (notifications: Notification[]) => void; // This prop will become less relevant as data is fetched via react-query
 }
 
 const TaskManager = ({ 
@@ -29,18 +29,35 @@ const TaskManager = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Mutation for creating notifications in Supabase
+  const createNotificationMutation = useMutation({
+    mutationFn: async (newNotificationData: Omit<Notification, 'id' | 'created_at'>) => {
+      const { data, error } = await supabase.from('notifications').insert([newNotificationData]).select();
+      if (error) throw error;
+      return data[0] as Notification;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] }); // Invalidate notifications query
+    },
+    onError: (error) => {
+      console.error('Error creating notification in DB:', error);
+      toast({
+        title: "خرابی",
+        description: `اطلاع بنانے میں خرابی: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   const createNotification = (type: Notification['type'], title: string, message: string) => {
-    const newNotification: Notification = {
-      id: Date.now().toString(), // This should ideally come from DB if notifications are stored
+    const newNotification: Omit<Notification, 'id' | 'created_at'> = {
       title,
       message,
       type,
-      timestamp: new Date().toISOString(),
-      read: false
+      is_read: false // Default to unread
     };
     
-    console.log('Creating notification:', newNotification);
-    onUpdateNotifications([newNotification, ...notifications]);
+    createNotificationMutation.mutate(newNotification); // Use mutation to save to DB
     
     toast({
       title: title,
@@ -140,7 +157,7 @@ const TaskManager = ({
     deleteTaskMutation.mutate(taskId);
   };
 
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'created_at'>) => { // Updated to created_at
+  const handleSaveTask = (taskData: Omit<Task, 'id' | 'created_at'>) => {
     if (userRole !== 'admin') return;
     
     if (modalMode === 'create') {
@@ -176,8 +193,8 @@ const TaskManager = ({
 
   const handleMemberTaskUpdate = (taskId: string, progress: number, memberNotes: string) => {
     const task = tasks.find(t => t.id === taskId);
-    if (task && task.assigned_to_name === userName) { // Use assigned_to_name
-      const updatedTask = { ...task, progress, member_notes: memberNotes }; // Use member_notes
+    if (task && task.assigned_to_name === userName) {
+      const updatedTask = { ...task, progress, member_notes: memberNotes };
       updateTaskMutation.mutate(updatedTask);
       
       createNotification(
