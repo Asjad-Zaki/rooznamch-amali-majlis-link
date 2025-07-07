@@ -61,7 +61,7 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md glass">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle dir="rtl">
             {mode === 'create' ? 'نیا ٹاسک بنائیں' : 'ٹاسک میں تبدیلی'}

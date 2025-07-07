@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -23,7 +24,7 @@ const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      <Card className="card-3d">
+      <Card>
         <CardHeader>
           <CardTitle dir="rtl" className="text-sm sm:text-base">حالت کے مطابق</CardTitle>
         </CardHeader>
@@ -48,7 +49,7 @@ const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-      <Card className="card-3d">
+      <Card>
         <CardHeader>
           <CardTitle dir="rtl" className="text-sm sm:text-base">ترجیح کے مطابق</CardTitle>
         </CardHeader>

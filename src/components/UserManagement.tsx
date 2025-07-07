@@ -254,7 +254,7 @@ const UserManagement = ({}: UserManagementProps) => {
 
   return (
     <div className="space-y-4 p-4">
-      <Card className="card-3d">
+      <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2" dir="rtl">
@@ -277,7 +277,7 @@ const UserManagement = ({}: UserManagementProps) => {
                   <p className="text-center text-gray-500" dir="rtl">کوئی فعال صارف نہیں</p>
                 ) : (
                   activeUsers.map((user) => (
-                    <Card key={user.id} className="p-4 card-3d">
+                    <Card key={user.id} className="p-4">
                       <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                           <div className="flex-1 space-y-2">
@@ -342,7 +342,7 @@ const UserManagement = ({}: UserManagementProps) => {
                   <p className="text-center text-gray-500" dir="rtl">کوئی غیر فعال صارف نہیں</p>
                 ) : (
                   inactiveUsers.map((user) => (
-                    <Card key={user.id} className="p-4 bg-gray-50 card-3d">
+                    <Card key={user.id} className="p-4 bg-gray-50">
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -383,7 +383,7 @@ const UserManagement = ({}: UserManagementProps) => {
 
       {/* User Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md mx-4 sm:mx-auto glass">
+        <DialogContent className="max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle dir="rtl">
               {modalMode === 'create' ? 'نیا صارف شامل کریں' : 'صارف میں تبدیلی'}

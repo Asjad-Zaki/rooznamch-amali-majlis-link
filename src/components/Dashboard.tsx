@@ -114,11 +114,6 @@ const Dashboard = ({
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-green-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse animation-delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-pink-400/5 to-yellow-400/5 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
-        
-        {/* Additional subtle background elements for more depth */}
-        <div className="absolute top-10 left-10 w-24 h-24 bg-white/5 rounded-full animate-float-slow"></div>
-        <div className="absolute bottom-20 right-20 w-32 h-32 bg-white/5 rounded-full animate-float-slow animation-delay-1500"></div>
-        <div className="absolute top-1/3 right-1/4 w-16 h-16 bg-white/5 rounded-full animate-float-slow animation-delay-700"></div>
       </div>
 
       {/* Header with 3D Effect */}
@@ -278,13 +273,6 @@ const Dashboard = ({
           0%, 100% { transform: translateY(0px) rotate(0deg); }
           50% { transform: translateY(-10px) rotate(1deg); }
         }
-
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-          25% { transform: translateY(-15px) translateX(10px) rotate(2deg); }
-          50% { transform: translateY(-10px) translateX(-5px) rotate(-1deg); }
-          75% { transform: translateY(-20px) translateX(15px) rotate(3deg); }
-        }
         
         @keyframes glow {
           0%, 100% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15); }
@@ -305,10 +293,6 @@ const Dashboard = ({
         
         .animate-float {
           animation: float 3s ease-in-out infinite;
-        }
-
-        .animate-float-slow {
-          animation: float-slow 10s ease-in-out infinite;
         }
         
         .animate-glow {
@@ -331,16 +315,8 @@ const Dashboard = ({
           animation-delay: 400ms;
         }
         
-        .animation-delay-700 {
-          animation-delay: 700ms;
-        }
-        
         .animation-delay-1000 {
           animation-delay: 1s;
-        }
-        
-        .animation-delay-1500 {
-          animation-delay: 1.5s;
         }
         
         .animation-delay-2000 {
