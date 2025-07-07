@@ -229,6 +229,7 @@ const Dashboard = ({
             onClose={() => notificationHandler.setIsNotificationPanelOpen(false)}
             onMarkAsRead={notificationHandler.handleMarkAsRead}
             onMarkAllAsRead={notificationHandler.handleMarkAllAsRead}
+            onDelete={notificationHandler.handleDeleteNotification}
           />
         </div>
       </div>

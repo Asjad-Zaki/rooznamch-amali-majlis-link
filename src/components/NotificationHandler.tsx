@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import NotificationPanel, { Notification } from './NotificationPanel';
 
@@ -26,6 +25,12 @@ const NotificationHandler = ({ notifications, onUpdateNotifications }: Notificat
     );
   };
 
+  const handleDeleteNotification = (notificationId: string) => {
+    onUpdateNotifications(
+      notifications.filter(notification => notification.id !== notificationId)
+    );
+  };
+
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   return (
@@ -36,13 +41,15 @@ const NotificationHandler = ({ notifications, onUpdateNotifications }: Notificat
         onClose={() => setIsNotificationPanelOpen(false)}
         onMarkAsRead={handleMarkAsRead}
         onMarkAllAsRead={handleMarkAllAsRead}
+        onDelete={handleDeleteNotification}
       />
       {/* Export functions for parent component to use */}
       <div style={{ display: 'none' }} data-notification-handler={{
         unreadNotifications,
         setIsNotificationPanelOpen,
         handleMarkAsRead,
-        handleMarkAllAsRead
+        handleMarkAllAsRead,
+        handleDeleteNotification
       }} />
     </>
   );
@@ -68,6 +75,12 @@ export const useNotificationHandler = ({ notifications, onUpdateNotifications }:
     );
   };
 
+  const handleDeleteNotification = (notificationId: string) => {
+    onUpdateNotifications(
+      notifications.filter(notification => notification.id !== notificationId)
+    );
+  };
+
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   return {
@@ -75,6 +88,7 @@ export const useNotificationHandler = ({ notifications, onUpdateNotifications }:
     setIsNotificationPanelOpen,
     handleMarkAsRead,
     handleMarkAllAsRead,
+    handleDeleteNotification,
     unreadNotifications
   };
 };

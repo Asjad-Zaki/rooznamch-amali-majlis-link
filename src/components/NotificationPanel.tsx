@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, CheckCircle } from 'lucide-react';
+import { X, CheckCircle, Trash2, PlusCircle, FilePenLine, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export interface Notification {
@@ -20,6 +19,7 @@ interface NotificationPanelProps {
   onClose: () => void;
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
+  onDelete: (notificationId: string) => void;
 }
 
 const NotificationPanel = ({ 
@@ -27,7 +27,8 @@ const NotificationPanel = ({
   isOpen, 
   onClose, 
   onMarkAsRead, 
-  onMarkAllAsRead 
+  onMarkAllAsRead,
+  onDelete
 }: NotificationPanelProps) => {
   if (!isOpen) return null;
 
@@ -36,13 +37,13 @@ const NotificationPanel = ({
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'task_created':
-        return '➕';
+        return <PlusCircle className="h-5 w-5 text-green-500" />;
       case 'task_updated':
-        return '✏️';
+        return <FilePenLine className="h-5 w-5 text-blue-500" />;
       case 'task_deleted':
-        return '🗑️';
+        return <Trash2 className="h-5 w-5 text-red-500" />;
       default:
-        return '📝';
+        return <Info className="h-5 w-5 text-gray-500" />;
     }
   };
 
@@ -61,8 +62,8 @@ const NotificationPanel = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-end p-4">
-      <Card className="w-96 max-h-[80vh] overflow-hidden">
-        <CardHeader className="pb-3">
+      <Card className="w-96 max-h-[80vh] overflow-hidden flex flex-col">
+        <CardHeader className="pb-3 border-b">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg" dir="rtl">اطلاعات</CardTitle>
             <div className="flex items-center space-x-2">
@@ -93,7 +94,7 @@ const NotificationPanel = ({
             </Badge>
           )}
         </CardHeader>
-        <CardContent className="max-h-96 overflow-y-auto">
+        <CardContent className="flex-1 overflow-y-auto p-4">
           {notifications.length === 0 ? (
             <p className="text-center text-gray-500 py-8" dir="rtl">
               کوئی اطلاع نہیں
@@ -103,27 +104,39 @@ const NotificationPanel = ({
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 rounded-lg border ${
+                  className={`p-3 rounded-lg border relative group transition-all duration-200 hover:shadow-md ${
                     notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                    <div className="flex items-center space-x-2" dir="rtl">
+                      <div className="flex-shrink-0">{getNotificationIcon(notification.type)}</div>
                       <Badge variant="outline" className="text-xs">
                         {getTypeLabel(notification.type)}
                       </Badge>
                     </div>
-                    {!notification.read && (
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!notification.read && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onMarkAsRead(notification.id)}
+                          className="h-6 w-6 p-0"
+                          title="پڑھا گیا نشان زد کریں"
+                        >
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onMarkAsRead(notification.id)}
-                        className="h-6 w-6 p-0"
+                        onClick={() => onDelete(notification.id)}
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        title="اطلاع حذف کریں"
                       >
-                        <CheckCircle className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                   <h4 className="font-medium text-sm mb-1" dir="rtl">
                     {notification.title}
