@@ -56,10 +56,15 @@ const Index = () => {
   const userId = currentUserProfile?.id || authUser?.id || '';
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error logging out:', error);
+    if (session) { // Only attempt to sign out if a session exists
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error logging out:', error);
+      } else {
+        navigate('/login');
+      }
     } else {
+      // If no session, just navigate to login
       navigate('/login');
     }
   };
