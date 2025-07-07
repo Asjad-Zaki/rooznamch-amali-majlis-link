@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Dashboard from '@/components/Dashboard';
-import { User } from '@/components/UserManagement'; // Keep User type for current user profile
+import { User } from '@/components/UserManagement';
 import { Notification } from '@/components/NotificationPanel';
 import { useAuth } from '@/integrations/supabase/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,8 +11,10 @@ const Index = () => {
   const navigate = useNavigate();
 
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
-  // Removed users state as UserManagement will fetch its own
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // State to control the current view mode (admin can switch to member view)
+  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // Default to 'member'
 
   useEffect(() => {
     if (!loading && !session) {
@@ -23,6 +25,7 @@ const Index = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (authUser) {
+        console.log('Index.tsx: Fetching user profile for authUser:', authUser.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -30,12 +33,15 @@ const Index = () => {
           .single();
 
         if (profileError) {
-          console.error('Error fetching user profile:', profileError);
+          console.error('Index.tsx: Error fetching user profile:', profileError);
           await supabase.auth.signOut();
           navigate('/login');
           return;
         }
+        console.log('Index.tsx: Fetched user profile:', profileData);
         setCurrentUserProfile(profileData as User);
+        // Set the initial view mode based on the fetched user's actual role
+        setViewMode((profileData as User).role);
       }
     };
 
@@ -44,17 +50,10 @@ const Index = () => {
     }
   }, [session, loading, authUser, navigate]);
 
-  const userRole = currentUserProfile?.role || 'member';
+  // Derive userRole and userName from currentUserProfile
+  const actualUserRole = currentUserProfile?.role || 'member';
   const userName = currentUserProfile?.name || authUser?.email || 'Guest';
   const userId = currentUserProfile?.id || authUser?.id || '';
-
-  const [viewMode, setViewMode] = useState<'admin' | 'member'>(userRole);
-
-  useEffect(() => {
-    if (currentUserProfile) {
-      setViewMode(currentUserProfile.role);
-    }
-  }, [currentUserProfile]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -66,15 +65,23 @@ const Index = () => {
   };
 
   const handleRoleSwitch = () => {
-    if (userRole === 'admin') {
-      setViewMode(viewMode === 'admin' ? 'member' : 'admin');
+    // Only allow role switch if the actual user is an admin
+    if (actualUserRole === 'admin') {
+      setViewMode(prevMode => (prevMode === 'admin' ? 'member' : 'admin'));
     }
   };
 
-  // Removed handleUpdateUsers as UserManagement handles its own data
-  // const handleUpdateUsers = (updatedUsers: User[]) => {
-  //   setUsers(updatedUsers);
-  // };
+  // Log for debugging before rendering Dashboard
+  useEffect(() => {
+    console.log('Index.tsx: Rendering Dashboard with:', {
+      viewMode: viewMode,
+      actualRole: actualUserRole,
+      userName: userName,
+      userId: userId,
+      currentUserProfile: currentUserProfile
+    });
+  }, [viewMode, actualUserRole, userName, userId, currentUserProfile]);
+
 
   if (loading || !session || !currentUserProfile) {
     return (
@@ -93,16 +100,15 @@ const Index = () => {
 
   return (
     <Dashboard
-      userRole={viewMode}
+      userRole={viewMode} // This is the current view mode (can be switched by admin)
       userName={userName}
       userId={userId}
       onLogout={handleLogout}
-      onRoleSwitch={userRole === 'admin' ? handleRoleSwitch : undefined}
-      // Removed users and onUpdateUsers props
+      onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined} // Only show switch if actual user is admin
       notifications={notifications}
       onUpdateNotifications={setNotifications}
-      viewMode={viewMode}
-      actualRole={userRole}
+      viewMode={viewMode} // Pass viewMode explicitly
+      actualRole={actualUserRole} // Pass actual role explicitly
     />
   );
 };
