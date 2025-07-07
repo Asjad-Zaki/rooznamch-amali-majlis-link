@@ -8,40 +8,8 @@ const Login = () => {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Dummy users for LoginForm until we fully integrate Supabase for user management
-  // These will be replaced by fetching from Supabase 'profiles' table later
-  const dummyUsers: User[] = [
-    {
-      id: '1',
-      name: 'منتظم',
-      email: 'admin@gmail.com',
-      role: 'admin',
-      password: '1111', // This password will be replaced by Supabase auth
-      secretNumber: '000000',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '2',
-      name: 'احمد علی',
-      email: 'ahmed@example.com',
-      role: 'member',
-      password: 'member123', // This password will be replaced by Supabase auth
-      secretNumber: '123456',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-    {
-      id: '3',
-      name: 'فاطمہ خان',
-      email: 'fatima@example.com',
-      role: 'member',
-      password: 'member123',
-      secretNumber: '234567',
-      createdAt: '2024-01-01',
-      isActive: true
-    },
-  ];
+  // Dummy users are no longer needed as user data will come from Supabase
+  const dummyUsers: User[] = [];
 
   useEffect(() => {
     if (!loading && session) {

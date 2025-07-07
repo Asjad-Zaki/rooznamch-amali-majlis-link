@@ -96,37 +96,45 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // Call a Supabase RPC function to verify secret number and get user details
-      const { data, error: rpcError } = await supabase.rpc('member_login_by_secret_number', {
-        p_secret_number: memberSecretNumber
+      // Call the Edge Function for member login
+      const response = await fetch('https://vvzrfdtrtjbyxtwkdzsa.supabase.co/functions/v1/member-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // No need for Authorization header here, as the Edge Function uses the service role key
+        },
+        body: JSON.stringify({ secret_number: memberSecretNumber }),
       });
 
-      if (rpcError) {
-        setError(rpcError.message);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'لاگ ان میں خرابی ہوئی');
         toast({
           title: "لاگ ان ناکام",
-          description: rpcError.message,
+          description: result.error || 'لاگ ان میں خرابی ہوئی',
           variant: "destructive",
         });
         return;
       }
 
-      if (data && data.user_id && data.user_name && data.user_role === 'member' && data.is_active) {
-        // If RPC returns a valid user, sign them in using a dummy password or a custom token
-        // For simplicity, we'll assume the RPC function handles the session or we'll use a dummy sign-in
-        // A more robust solution would involve a custom JWT or a server-side flow.
-        // For now, we'll just use the onLogin callback to simulate login.
-        // In a real scenario, the RPC would return a JWT or trigger a session.
-        // Since Supabase auth.signInWithPassword requires email, we'll need to rethink this.
-        // A better approach for member login with secret number is to use an Edge Function
-        // that signs in the user with a pre-defined email/password for that secret number,
-        // or creates a temporary user and signs them in.
+      if (result.session) {
+        // Set the Supabase session using the session data from the Edge Function
+        const { error: setSessionError } = await supabase.auth.setSession(result.session);
+        if (setSessionError) {
+          setError(setSessionError.message);
+          toast({
+            title: "لاگ ان ناکام",
+            description: setSessionError.message,
+            variant: "destructive",
+          });
+          return;
+        }
 
-        // For now, let's simulate the login for the frontend based on RPC success
-        onLogin('member', data.user_name, data.user_id);
+        onLogin('member', result.user_name, result.user_id);
         toast({
           title: "لاگ ان کامیاب",
-          description: `خوش آمدید، ${data.user_name}`,
+          description: `خوش آمدید، ${result.user_name}`,
         });
       } else {
         setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
@@ -473,17 +481,6 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         
         .animation-delay-2000 {
           animation-delay: 2s;
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 640px) {
-          .animate-float {
-            animation-duration: 4s;
-          }
-          
-          .animate-card-entrance {
-            animation-duration: 0.8s;
-          }
         }
 
         /* Custom scrollbar for better UX */
