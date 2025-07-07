@@ -35,6 +35,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    console.log('LoginForm: Attempting admin login for email:', adminEmail);
 
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -43,6 +44,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
       if (authError) {
+        console.error('LoginForm: Admin auth error:', authError.message);
         setError(authError.message);
         toast({
           title: "لاگ ان ناکام",
@@ -51,6 +53,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         });
         return;
       }
+      console.log('LoginForm: Admin auth successful, user:', data.user);
 
       // Verify if the logged-in user is an admin from the profiles table
       const { data: profile, error: profileError } = await supabase
@@ -60,6 +63,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         .single();
 
       if (profileError || !profile || profile.role !== 'admin' || !profile.is_active) {
+        console.error('LoginForm: Admin profile verification failed. Profile:', profile, 'Error:', profileError?.message);
         setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",
@@ -69,6 +73,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         await supabase.auth.signOut();
         return;
       }
+      console.log('LoginForm: Admin profile verified:', profile);
 
       onLogin('admin', profile.name, profile.id);
       toast({
@@ -77,6 +82,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
     } catch (err: any) {
+      console.error('LoginForm: Admin login catch error:', err.message);
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -92,6 +98,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    console.log('LoginForm: Attempting member login for secret number:', memberSecretNumber);
 
     try {
       const response = await fetch('https://vvzrfdtrtjbyxtwkdzsa.supabase.co/functions/v1/member-login', {
@@ -103,8 +110,10 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       });
 
       const result = await response.json();
+      console.log('LoginForm: Member login edge function response:', result);
 
       if (!response.ok) {
+        console.error('LoginForm: Member login edge function error:', result.error);
         setError(result.error || 'لاگ ان میں خرابی ہوئی');
         toast({
           title: "لاگ ان ناکام",
@@ -115,8 +124,10 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
       }
 
       if (result.session) {
+        console.log('LoginForm: Edge function returned session. Attempting to set session on client.');
         const { error: setSessionError } = await supabase.auth.setSession(result.session);
         if (setSessionError) {
+          console.error('LoginForm: Error setting session on client:', setSessionError.message);
           setError(setSessionError.message);
           toast({
             title: "لاگ ان ناکام",
@@ -125,6 +136,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
           });
           return;
         }
+        console.log('LoginForm: Session successfully set on client.');
 
         onLogin('member', result.user_name, result.user_id);
         toast({
@@ -132,6 +144,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
           description: `خوش آمدید، ${result.user_name}`,
         });
       } else {
+        console.error('LoginForm: Edge function did not return a session.');
         setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",
@@ -140,6 +153,7 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         });
       }
     } catch (err: any) {
+      console.error('LoginForm: Member login catch error:', err.message);
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",

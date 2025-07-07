@@ -12,8 +12,10 @@ const Login = () => {
   const dummyUsers: User[] = [];
 
   useEffect(() => {
+    console.log('Login.tsx: Session state changed. Loading:', loading, 'Session:', session);
     if (!loading && session) {
       // If user is already logged in, redirect to dashboard
+      console.log('Login.tsx: Session found, navigating to /');
       navigate('/');
     }
   }, [session, loading, navigate]);
@@ -22,7 +24,7 @@ const Login = () => {
   // For now, we'll keep the prop signature for compatibility
   const handleLogin = (role: 'admin' | 'member', name: string, userId: string) => {
     // This function will be updated to reflect Supabase login success
-    console.log('Login successful (placeholder):', { role, name, userId });
+    console.log('Login successful (placeholder in Login.tsx):', { role, name, userId });
   };
 
   if (loading) {

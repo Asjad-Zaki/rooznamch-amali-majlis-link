@@ -17,15 +17,17 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // Default to 'member'
 
   useEffect(() => {
+    console.log('Index.tsx (useEffect 1): Session, Loading, AuthUser:', { session, loading, authUser });
     if (!loading && !session) {
+      console.log('Index.tsx (useEffect 1): No session found, navigating to /login');
       navigate('/login');
     }
-  }, [session, loading, navigate]);
+  }, [session, loading, navigate, authUser]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (authUser) {
-        console.log('Index.tsx: Fetching user profile for authUser:', authUser.id);
+        console.log('Index.tsx (useEffect 2): Fetching user profile for authUser ID:', authUser.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -33,15 +35,16 @@ const Index = () => {
           .single();
 
         if (profileError) {
-          console.error('Index.tsx: Error fetching user profile:', profileError);
+          console.error('Index.tsx (useEffect 2): Error fetching user profile:', profileError);
           await supabase.auth.signOut();
           navigate('/login');
           return;
         }
-        console.log('Index.tsx: Fetched user profile:', profileData);
+        console.log('Index.tsx (useEffect 2): Fetched user profile:', profileData);
         setCurrentUserProfile(profileData as User);
         // Set the initial view mode based on the fetched user's actual role
         setViewMode((profileData as User).role);
+        console.log('Index.tsx (useEffect 2): Initial viewMode set to:', (profileData as User).role);
       }
     };
 
@@ -73,6 +76,7 @@ const Index = () => {
     // Only allow role switch if the actual user is an admin
     if (actualUserRole === 'admin') {
       setViewMode(prevMode => (prevMode === 'admin' ? 'member' : 'admin'));
+      console.log('Index.tsx: Role switched to:', viewMode === 'admin' ? 'member' : 'admin');
     }
   };
 

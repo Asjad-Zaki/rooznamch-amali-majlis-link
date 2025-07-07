@@ -51,7 +51,7 @@ serve(async (req) => {
     const { data: { user, session }, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: profile.email,
-      redirectTo: 'https://86a6094d-c758-4efa-9688-890a8a54f068.lovableproject.com/login' // Your app's login URL
+      redirectTo: 'https://86a6094d-c758-4efa-9688-890a8a54f068.lovableproject.com' // Corrected to root URL
     });
 
     if (sessionError || !session) {
