@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import * as autoTable from 'jspdf-autotable'; // Changed import to ensure side effects are applied
 import { Task } from '@/components/TaskCard';
 
 export const generateTasksReportPdf = (tasks: Task[], userName: string) => {
