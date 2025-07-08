@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Ensure jspdf-autotable's side effects are not tree-shaken
+  // Ensure jspdf-autotable's and jspdf's side effects are not tree-shaken
   optimizeDeps: {
-    include: ['jspdf-autotable'],
+    include: ['jspdf-autotable', 'jspdf'], // Added 'jspdf' here
   },
 }));
