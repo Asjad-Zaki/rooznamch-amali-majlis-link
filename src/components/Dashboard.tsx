@@ -11,8 +11,11 @@ import { useNotificationHandler } from './NotificationHandler';
 import { Task } from './TaskCard';
 import { Notification } from './NotificationPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button'; // Import Button
+import { FileText } from 'lucide-react'; // Import FileText icon
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { generateTasksReportPdf } from '@/lib/pdf-generator'; // Import the PDF generator
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
@@ -89,6 +92,12 @@ const Dashboard = ({
     console.log('Dashboard - ViewMode:', viewMode, 'ActualRole:', actualRole);
     console.log('Dashboard - Notifications:', notifications);
   }, [tasks, viewMode, actualRole, notifications]);
+
+  const handleGenerateReport = () => {
+    if (tasks) {
+      generateTasksReportPdf(tasks, userName);
+    }
+  };
 
   if (isLoadingInitial || isLoadingTasks || isLoadingNotifications) {
     return (
@@ -179,6 +188,14 @@ const Dashboard = ({
                 {/* Charts with Delay Animation */}
                 <div className="transform transition-all duration-500 animate-slide-in-from-right animation-delay-200">
                   <DashboardCharts tasks={tasks || []} />
+                </div>
+
+                {/* Generate Report Button */}
+                <div className="flex justify-end mb-4">
+                  <Button onClick={handleGenerateReport} className="bg-purple-600 hover:bg-purple-700 text-white" dir="rtl">
+                    <FileText className="h-4 w-4 ml-2" />
+                    رپورٹ بنائیں
+                  </Button>
                 </div>
                 
                 {/* Task Board with Final Animation */}
