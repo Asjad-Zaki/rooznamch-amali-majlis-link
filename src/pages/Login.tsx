@@ -1,15 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/LoginForm';
+import RegisterForm from '@/components/RegisterForm'; // Import the new RegisterForm
 import { useAuth } from '@/integrations/supabase/auth';
-import { User } from '@/components/UserManagement'; // Assuming User type is still needed for LoginForm props
 
 const Login = () => {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
-
-  // Dummy users are no longer needed as user data will come from Supabase
-  const dummyUsers: User[] = [];
+  const [showRegister, setShowRegister] = useState(false); // State to toggle between login and register
 
   useEffect(() => {
     console.log('Login.tsx: Session state changed. Loading:', loading, 'Session:', session);
@@ -20,11 +18,9 @@ const Login = () => {
     }
   }, [session, loading, navigate]);
 
-  // onLogin will be handled by LoginForm directly interacting with Supabase
-  // For now, we'll keep the prop signature for compatibility
-  const handleLogin = (role: 'admin' | 'member', name: string, userId: string) => {
-    // This function will be updated to reflect Supabase login success
-    console.log('Login successful (placeholder in Login.tsx):', { role, name, userId });
+  const handleLoginSuccess = (role: 'admin' | 'member', name: string, userId: string) => {
+    console.log('Login successful (Login.tsx):', { role, name, userId });
+    // The useEffect above will handle navigation to '/'
   };
 
   if (loading) {
@@ -42,7 +38,11 @@ const Login = () => {
     );
   }
 
-  return <LoginForm onLogin={handleLogin} users={dummyUsers} />;
+  return showRegister ? (
+    <RegisterForm onSwitchToLogin={() => setShowRegister(false)} />
+  ) : (
+    <LoginForm onLogin={handleLoginSuccess} onSwitchToRegister={() => setShowRegister(true)} />
+  );
 };
 
 export default Login;

@@ -5,24 +5,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trash2, Edit, Plus, Users, Key, Copy } from 'lucide-react';
+import { Trash2, Edit, Plus, Users } from 'lucide-react'; // Removed Key, Copy
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Updated User interface - removed password
+// Updated User interface - removed secret number
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'member';
-  secretNumber: string;
   createdAt: string;
   isActive: boolean;
 }
 
-// Removed props as UserManagement will manage its own data
 interface UserManagementProps {
   // No props needed here anymore, it will fetch its own data
 }
@@ -36,7 +34,6 @@ const UserManagement = ({}: UserManagementProps) => {
     email: '',
     role: 'member' as User['role'],
     password: '', // Only for create mode
-    secretNumber: '',
     isActive: true
   });
   const { toast } = useToast();
@@ -54,7 +51,6 @@ const UserManagement = ({}: UserManagementProps) => {
         name: item.name,
         email: item.email,
         role: item.role,
-        secretNumber: item.secret_number, 
         createdAt: item.created_at,       
         isActive: item.is_active          
       })) as User[];
@@ -64,7 +60,7 @@ const UserManagement = ({}: UserManagementProps) => {
   // Add user mutation
   const addUserMutation = useMutation({
     mutationFn: async (newUser: Omit<User, 'id' | 'createdAt'> & { password?: string }) => {
-      // For new user, first sign up with email/password
+      // For new user, sign up with email/password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password || '', // Password is required for signUp
@@ -73,22 +69,14 @@ const UserManagement = ({}: UserManagementProps) => {
             name: newUser.name,
             role: newUser.role,
             is_active: newUser.isActive,
-            // secret_number is a custom field, not directly handled by auth.signUp metadata
-            // It will be updated in the profiles table after the user is created by the trigger
           },
         },
       });
 
       if (authError) throw authError;
-
+      
       // The handle_new_user trigger creates the profile entry.
-      // Now, update the secret_number in the newly created profile.
-      const { error: profileUpdateError } = await supabase
-        .from('profiles')
-        .update({ secret_number: newUser.secretNumber })
-        .eq('id', authData.user?.id);
-
-      if (profileUpdateError) throw profileUpdateError;
+      // No need to manually insert into profiles here.
 
       return { ...newUser, id: authData.user?.id || '', createdAt: new Date().toISOString() } as User;
     },
@@ -117,7 +105,6 @@ const UserManagement = ({}: UserManagementProps) => {
           name: updatedUser.name,
           email: updatedUser.email,
           role: updatedUser.role,
-          secret_number: updatedUser.secretNumber,
           is_active: updatedUser.isActive,
         })
         .eq('id', updatedUser.id);
@@ -190,29 +177,14 @@ const UserManagement = ({}: UserManagementProps) => {
     },
   });
 
-  const generateSecretNumber = () => {
-    const secretNumber = Math.floor(100000 + Math.random() * 900000).toString();
-    setFormData({ ...formData, secretNumber });
-  };
-
-  const copySecretNumber = (secretNumber: string) => {
-    navigator.clipboard.writeText(secretNumber);
-    toast({
-      title: "کاپی ہو گیا",
-      description: "خفیہ نمبر کاپی بورڈ میں کاپی ہو گیا ہے",
-    });
-  };
-
   const handleAddUser = () => {
     setCurrentUser(null);
     setModalMode('create');
-    const newSecretNumber = Math.floor(100000 + Math.random() * 900000).toString();
     setFormData({
       name: '',
       email: '',
       role: 'member',
       password: '', // Reset password for new user
-      secretNumber: newSecretNumber,
       isActive: true
     });
     setIsModalOpen(true);
@@ -226,7 +198,6 @@ const UserManagement = ({}: UserManagementProps) => {
       email: user.email,
       role: user.role,
       password: '', // Password is not editable for existing users via this form
-      secretNumber: user.secretNumber,
       isActive: user.isActive
     });
     setIsModalOpen(true);
@@ -305,18 +276,6 @@ const UserManagement = ({}: UserManagementProps) => {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600" dir="rtl">{user.email}</p>
-                            <div className="flex items-center gap-2">
-                              <Key className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm font-mono">{user.secretNumber}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copySecretNumber(user.secretNumber)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Button
@@ -455,22 +414,6 @@ const UserManagement = ({}: UserManagementProps) => {
                   <SelectItem value="admin" dir="rtl">منتظم</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="secretNumber" dir="rtl">خفیہ نمبر</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="secretNumber"
-                  value={formData.secretNumber}
-                  onChange={(e) => setFormData({ ...formData, secretNumber: e.target.value })}
-                  required
-                  dir="rtl"
-                  className="flex-1"
-                />
-                <Button type="button" onClick={generateSecretNumber} variant="outline">
-                  تبدیل کریں
-                </Button>
-              </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} dir="rtl" className="w-full sm:w-auto">

@@ -4,24 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User } from './UserManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoginFormProps {
   onLogin: (role: 'admin' | 'member', name: string, userId: string) => void;
-  users: User[];
+  onSwitchToRegister: () => void; // New prop to switch to register form
 }
 
-const LoginForm = ({ onLogin, users }: LoginFormProps) => {
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [memberSecretNumber, setMemberSecretNumber] = useState('');
+const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState('member');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,20 +27,20 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    console.log('LoginForm: Attempting admin login for email:', adminEmail);
+    console.log('LoginForm: Attempting login for email:', email);
 
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: adminPassword,
+        email: email,
+        password: password,
       });
 
       if (authError) {
-        console.error('LoginForm: Admin auth error:', authError.message);
+        console.error('LoginForm: Auth error:', authError.message);
         setError(authError.message);
         toast({
           title: "لاگ ان ناکام",
@@ -53,107 +49,36 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         });
         return;
       }
-      console.log('LoginForm: Admin auth successful, user:', data.user);
+      console.log('LoginForm: Auth successful, user:', data.user);
 
-      // Verify if the logged-in user is an admin from the profiles table
+      // Verify user role from the profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, name, role, is_active')
         .eq('id', data.user?.id)
         .single();
 
-      if (profileError || !profile || profile.role !== 'admin' || !profile.is_active) {
-        console.error('LoginForm: Admin profile verification failed. Profile:', profile, 'Error:', profileError?.message);
-        setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے');
+      if (profileError || !profile || !profile.is_active) {
+        console.error('LoginForm: Profile verification failed. Profile:', profile, 'Error:', profileError?.message);
+        setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",
-          description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ منتظم نہیں ہے یا غیر فعال ہے",
+          description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے",
           variant: "destructive",
         });
-        await supabase.auth.signOut();
+        await supabase.auth.signOut(); // Sign out if profile is invalid or inactive
         return;
       }
-      console.log('LoginForm: Admin profile verified:', profile);
+      console.log('LoginForm: Profile verified:', profile);
 
-      onLogin('admin', profile.name, profile.id);
+      onLogin(profile.role, profile.name, profile.id);
       toast({
         title: "لاگ ان کامیاب",
         description: `خوش آمدید، ${profile.name}`,
       });
 
     } catch (err: any) {
-      console.error('LoginForm: Admin login catch error:', err.message);
-      setError('لاگ ان میں خرابی ہوئی: ' + err.message);
-      toast({
-        title: "لاگ ان میں خرابی",
-        description: 'لاگ ان میں خرابی ہوئی',
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMemberLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    console.log('LoginForm: Attempting member login for secret number:', memberSecretNumber);
-
-    try {
-      const response = await fetch('https://vvzrfdtrtjbyxtwkdzsa.supabase.co/functions/v1/member-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ secret_number: memberSecretNumber }),
-      });
-
-      const result = await response.json();
-      console.log('LoginForm: Member login edge function response:', result);
-
-      if (!response.ok) {
-        console.error('LoginForm: Member login edge function error:', result.error);
-        setError(result.error || 'لاگ ان میں خرابی ہوئی');
-        toast({
-          title: "لاگ ان ناکام",
-          description: result.error || 'لاگ ان میں خرابی ہوئی',
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (result.session) {
-        console.log('LoginForm: Edge function returned session. Attempting to set session on client.');
-        const { error: setSessionError } = await supabase.auth.setSession(result.session);
-        if (setSessionError) {
-          console.error('LoginForm: Error setting session on client:', setSessionError.message);
-          setError(setSessionError.message);
-          toast({
-            title: "لاگ ان ناکام",
-            description: setSessionError.message,
-            variant: "destructive",
-          });
-          return;
-        }
-        console.log('LoginForm: Session successfully set on client.');
-
-        onLogin('member', result.user_name, result.user_id);
-        toast({
-          title: "لاگ ان کامیاب",
-          description: `خوش آمدید، ${result.user_name}`,
-        });
-      } else {
-        console.error('LoginForm: Edge function did not return a session.');
-        setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
-        toast({
-          title: "لاگ ان ناکام",
-          description: "غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے",
-          variant: "destructive",
-        });
-      }
-    } catch (err: any) {
-      console.error('LoginForm: Member login catch error:', err.message);
+      console.error('LoginForm: Login catch error:', err.message);
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -211,126 +136,61 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
         </CardHeader>
         
         <CardContent className="relative z-10">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg p-1 transform transition-all duration-500 animate-slide-up">
-              <TabsTrigger 
-                value="member" 
-                dir="rtl" 
-                className="text-xs sm:text-sm font-medium transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/50 data-[state=active]:transform data-[state=active]:scale-105 text-white/70 hover:text-white rounded-md"
-              >
-                رکن لاگ ان
-              </TabsTrigger>
-              <TabsTrigger 
-                value="admin" 
-                dir="rtl" 
-                className="text-xs sm:text-sm font-medium transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 data-[state=active]:transform data-[state=active]:scale-105 text-white/70 hover:text-white rounded-md"
-              >
-                منتظم لاگ ان
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="member" className="transform transition-all duration-500 animate-fade-in-up">
-              <div className="space-y-4 sm:space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="secretNumber" dir="rtl" className="text-sm text-white/90 font-medium">
-                    خفیہ نمبر
-                  </Label>
-                  <div className="relative group">
-                    <Input
-                      id="secretNumber"
-                      type="text"
-                      value={memberSecretNumber}
-                      onChange={(e) => setMemberSecretNumber(e.target.value)}
-                      required
-                      dir="rtl"
-                      placeholder="آپ کا خفیہ نمبر داخل کریں"
-                      className="text-center font-mono text-base sm:text-lg bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-blue-500/20"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleMemberLogin(e as any);
-                        }
-                      }}
-                    />
-                    <div className="absolute inset-0 rounded-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={handleMemberLogin}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2.5 sm:py-3 text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 transform transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isLoading}
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" dir="rtl" className="text-sm text-white/90 font-medium">
+                ای میل
+              </Label>
+              <div className="relative group">
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   dir="rtl"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      لاگ ان ہو رہا ہے...
-                    </div>
-                  ) : (
-                    'لاگ ان'
-                  )}
-                </Button>
+                  placeholder="آپ کا ای میل داخل کریں"
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
+                />
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
-            </TabsContent>
+            </div>
             
-            <TabsContent value="admin" className="transform transition-all duration-500 animate-fade-in-up">
-              <form onSubmit={handleAdminLogin} className="space-y-4 sm:space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="adminEmail" dir="rtl" className="text-sm text-white/90 font-medium">
-                    ای میل
-                  </Label>
-                  <div className="relative group">
-                    <Input
-                      id="adminEmail"
-                      type="email"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      required
-                      dir="rtl"
-                      placeholder="آپ کا ای میل داخل کریں"
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
-                    />
-                    <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminPassword" dir="rtl" className="text-sm text-white/90 font-medium">
-                    پاس ورڈ
-                  </Label>
-                  <div className="relative group">
-                    <Input
-                      id="adminPassword"
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      required
-                      dir="rtl"
-                      placeholder="آپ کا پاس ورڈ داخل کریں"
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
-                    />
-                    <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-green-500 to-cyan-600 hover:from-green-600 hover:to-cyan-700 text-white font-medium py-2.5 sm:py-3 text-sm sm:text-base shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transform transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isLoading}
+            <div className="space-y-2">
+              <Label htmlFor="password" dir="rtl" className="text-sm text-white/90 font-medium">
+                پاس ورڈ
+              </Label>
+              <div className="relative group">
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   dir="rtl"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      لاگ ان ہو رہا ہے...
-                    </div>
-                  ) : (
-                    'لاگ ان'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+                  placeholder="آپ کا پاس ورڈ داخل کریں"
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
+                />
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              </div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-green-500 to-cyan-600 hover:from-green-600 hover:to-cyan-700 text-white font-medium py-2.5 sm:py-3 text-sm sm:text-base shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transform transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={isLoading}
+              dir="rtl"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  لاگ ان ہو رہا ہے...
+                </div>
+              ) : (
+                'لاگ ان'
+              )}
+            </Button>
+          </form>
           
           {error && (
             <Alert variant="destructive" className="mt-4 sm:mt-6 bg-red-500/10 border border-red-500/30 backdrop-blur-sm animate-shake">
@@ -339,8 +199,13 @@ const LoginForm = ({ onLogin, users }: LoginFormProps) => {
               </AlertDescription>
             </Alert>
           )}
-          
-         
+
+          <div className="mt-6 text-center text-white/80 text-sm" dir="rtl">
+            اکاؤنٹ نہیں ہے؟{' '}
+            <Button variant="link" onClick={onSwitchToRegister} className="p-0 h-auto text-blue-300 hover:text-blue-200 underline">
+              رجسٹر کریں
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
