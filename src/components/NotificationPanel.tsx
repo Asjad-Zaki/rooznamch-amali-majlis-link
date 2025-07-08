@@ -128,7 +128,7 @@ const NotificationPanel = ({
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={onClose}>
-        <DrawerContent className="h-[80vh] flex flex-col rounded-t-[10px] bg-white p-4">
+        <DrawerContent className="h-full flex flex-col rounded-t-[10px] bg-white p-4">
           <DrawerHeader className="p-0 pb-3 border-b flex justify-between items-center">
             <DrawerTitle dir="rtl">اطلاعات</DrawerTitle>
             <div className="flex items-center space-x-2">
