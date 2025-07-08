@@ -161,7 +161,7 @@ const NotificationPanel = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed top-0 right-0 h-full w-96 max-w-full rounded-none border-l p-4 flex flex-col">
+      <DialogContent className="fixed top-0 right-0 h-full w-full max-w-sm rounded-none border-l p-4 flex flex-col">
         <DialogHeader className="p-0 pb-3 border-b flex justify-between items-center">
           <DialogTitle dir="rtl">اطلاعات</DialogTitle>
           <div className="flex items-center space-x-2">
