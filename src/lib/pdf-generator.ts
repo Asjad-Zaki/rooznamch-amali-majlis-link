@@ -11,7 +11,7 @@ export const generateTasksReportPdf = (tasks: Task[], userName: string) => {
     floatPrecision: 16 // for more precise positioning
   });
 
-  doc.setRTLTextDirection(true); // Re-added for overall RTL support
+  // doc.setRTLTextDirection(true); // Removed: This function is not available in jsPDF
 
   let yPos = 40;
 
