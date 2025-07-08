@@ -14,15 +14,89 @@ export const generateTasksReportPdf = (tasks: Task[], userName: string) => {
   // Set RTL for the entire document
   doc.setRTLTextDirection(true);
 
+  let yPos = 40;
+
   // Add a title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('ٹاسک رپورٹ', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' }); // Centered title
+  doc.text('ٹاسک رپورٹ', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' }); // Centered title
+  yPos += 25;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(12);
-  doc.text(`رپورٹ تیار کردہ: ${userName}`, doc.internal.pageSize.getWidth() - 40, 60, { align: 'right' });
-  doc.text(`تاریخ: ${new Date().toLocaleDateString('ur-PK')}`, doc.internal.pageSize.getWidth() - 40, 75, { align: 'right' });
+  doc.text(`رپورٹ تیار کردہ: ${userName}`, doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
+  yPos += 15;
+  doc.text(`تاریخ: ${new Date().toLocaleDateString('ur-PK')}`, doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
+  yPos += 30; // Space before summary
+
+  // --- Summary Section ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('خلاصہ', doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
+  yPos += 20;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  const inProgressTasks = tasks.filter(t => t.status === 'inprogress').length;
+  const todoTasks = tasks.filter(t => t.status === 'todo').length;
+  const reviewTasks = tasks.filter(t => t.status === 'review').length;
+
+  const priorityCounts = {
+    low: tasks.filter(t => t.priority === 'low').length,
+    medium: tasks.filter(t => t.priority === 'medium').length,
+    high: tasks.filter(t => t.priority === 'high').length,
+  };
+
+  const summaryData = [
+    ['کل ٹاسکس:', totalTasks],
+    ['مکمل:', completedTasks],
+    ['جاری:', inProgressTasks],
+    ['کرنا ہے:', todoTasks],
+    ['جائزہ:', reviewTasks],
+    ['ترجیح کم:', priorityCounts.low],
+    ['ترجیح درمیانہ:', priorityCounts.medium],
+    ['ترجیح زیادہ:', priorityCounts.high],
+  ];
+
+  (doc as any).autoTable({
+    startY: yPos,
+    head: [['تفصیل', 'تعداد']],
+    body: summaryData,
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 10,
+      cellPadding: 4,
+      halign: 'right',
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: [59, 130, 246], // Tailwind blue-500
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'right',
+    },
+    bodyStyles: {
+      textColor: [0, 0, 0],
+    },
+    columnStyles: {
+      0: { cellWidth: 100 }, // Description column
+      1: { cellWidth: 50, halign: 'center' }, // Count column
+    },
+    margin: { right: doc.internal.pageSize.getWidth() - 200 }, // Align summary table to the right
+    rtl: true,
+  });
+
+  yPos = (doc as any).autoTable.previous.finalY + 30; // Update yPos after summary table
+
+  // --- Detailed Tasks Section ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('تفصیلی ٹاسکس', doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
+  yPos += 20;
 
   // Prepare table data
   const tableColumn = [
@@ -50,7 +124,7 @@ export const generateTasksReportPdf = (tasks: Task[], userName: string) => {
   (doc as any).autoTable({
     head: [tableColumn.map(col => col.header)],
     body: tableRows.map(row => Object.values(row)),
-    startY: 100,
+    startY: yPos,
     theme: 'striped',
     styles: {
       font: 'helvetica',
