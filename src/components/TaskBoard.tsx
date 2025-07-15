@@ -1,3 +1,4 @@
+
 import React from 'react';
 import TaskCard, { Task } from './TaskCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,21 +38,13 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    console.log(`TaskBoard - All ${status} tasks:`, filteredTasks.map(t => ({ title: t.title, assignedTo: t.assignedTo })));
+    console.log(`TaskBoard - All ${status} tasks:`, filteredTasks.map(t => ({ title: t.title, assignedTo: t.assigned_to_name })));
     
     // For members, show only their assigned tasks (exact name match)
     if (userRole === 'member') {
-<<<<<<< HEAD
       filteredTasks = filteredTasks.filter(task => 
-        task.assigned_to_name && task.assigned_to_name.toLowerCase() === userName.toLowerCase() // Use assigned_to_name
+        task.assigned_to_name && task.assigned_to_name.toLowerCase() === userName.toLowerCase()
       );
-=======
-      filteredTasks = filteredTasks.filter(task => {
-        const isAssigned = task.assignedTo && task.assignedTo.trim() === userName.trim();
-        console.log(`TaskBoard - Checking task "${task.title}": assignedTo="${task.assignedTo}", userName="${userName}", match=${isAssigned}`);
-        return isAssigned;
-      });
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
     }
     
     console.log(`TaskBoard - Final ${status} tasks for ${userRole} ${userName}:`, filteredTasks.length);
