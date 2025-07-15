@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, Bell, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useRealtime } from '@/contexts/RealtimeContext';
+import { useDatabaseRealtime } from '@/contexts/DatabaseRealtimeContext';
 import { useNotificationHandler } from './NotificationHandler';
 import NotificationPanel from './NotificationPanel';
 import jsPDF from 'jspdf';
@@ -25,7 +25,12 @@ const Header = ({
   notifications = 0,
   onNotificationClick
 }: HeaderProps) => {
-  const { notifications: realtimeNotifications, tasks, deleteNotification, clearAllNotifications } = useRealtime();
+  const { 
+    notifications: realtimeNotifications, 
+    tasks, 
+    deleteNotification, 
+    clearAllNotifications 
+  } = useDatabaseRealtime();
   
   const {
     isNotificationPanelOpen,
@@ -189,17 +194,17 @@ const Header = ({
         }
         
         // Convert assignedTo name
-        const readableAssignee = convertUrduToReadable(task.assigned_to_name);
+        const readableAssignee = convertUrduToReadable(task.assigned_to_name || '');
         pdf.text(`Assigned To: ${readableAssignee}`, 30, yPosition);
         yPosition += 5;
         pdf.text(`Status: ${statusLabels[task.status]}`, 30, yPosition);
         yPosition += 5;
         pdf.text(`Priority: ${priorityLabels[task.priority]}`, 30, yPosition);
         yPosition += 5;
-        pdf.text(`Progress: ${task.progress}%`, 30, yPosition);
+        pdf.text(`Progress: ${task.progress || 0}%`, 30, yPosition);
         yPosition += 5;
         
-        const dueDate = new Date(task.due_date).toLocaleDateString('en-US');
+        const dueDate = new Date(task.due_date || '').toLocaleDateString('en-US');
         pdf.text(`Due Date: ${dueDate}`, 30, yPosition);
         yPosition += 5;
         
@@ -215,7 +220,7 @@ const Header = ({
       });
       
       // Add footer with page numbers
-      const totalPages = pdf.getNumberOfPages();
+      const totalPages = (pdf as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
         pdf.setFontSize(8);
