@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import NotificationPanel, { Notification } from './NotificationPanel';
+<<<<<<< HEAD
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+=======
+import { useRealtime } from '@/contexts/RealtimeContext';
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 
 interface NotificationHandlerProps {
   notifications: Notification[]; // Now received from Dashboard (fetched from Supabase)
@@ -9,6 +13,7 @@ interface NotificationHandlerProps {
 
 const NotificationHandler = ({ notifications }: NotificationHandlerProps) => {
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+<<<<<<< HEAD
   const queryClient = useQueryClient();
 
   const markAsReadMutation = useMutation({
@@ -44,6 +49,23 @@ const NotificationHandler = ({ notifications }: NotificationHandlerProps) => {
       console.error('Error marking all notifications as read:', error);
     }
   });
+=======
+  const { updateNotifications } = useRealtime();
+
+  const handleMarkAsRead = (notificationId: string) => {
+    const updatedNotifications = notifications.map(notification => 
+      notification.id === notificationId 
+        ? { ...notification, read: true }
+        : notification
+    );
+    updateNotifications(updatedNotifications);
+  };
+
+  const handleMarkAllAsRead = () => {
+    const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
+    updateNotifications(updatedNotifications);
+  };
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: string) => {
@@ -89,6 +111,7 @@ const NotificationHandler = ({ notifications }: NotificationHandlerProps) => {
 // Export hook for easier usage
 export const useNotificationHandler = ({ notifications }: NotificationHandlerProps) => {
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+<<<<<<< HEAD
   const queryClient = useQueryClient();
 
   const markAsReadMutation = useMutation({
@@ -124,6 +147,23 @@ export const useNotificationHandler = ({ notifications }: NotificationHandlerPro
       console.error('Error marking all notifications as read:', error);
     }
   });
+=======
+  const { updateNotifications } = useRealtime();
+
+  const handleMarkAsRead = (notificationId: string) => {
+    const updatedNotifications = notifications.map(notification => 
+      notification.id === notificationId 
+        ? { ...notification, read: true }
+        : notification
+    );
+    updateNotifications(updatedNotifications);
+  };
+
+  const handleMarkAllAsRead = () => {
+    const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
+    updateNotifications(updatedNotifications);
+  };
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: string) => {

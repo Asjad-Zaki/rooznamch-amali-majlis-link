@@ -58,7 +58,12 @@ const TaskManager = ({
       created_at: new Date().toISOString() // Explicitly add created_at
     };
     
+<<<<<<< HEAD
     createNotificationMutation.mutate(newNotification); // Use mutation to save to DB
+=======
+    console.log('Creating real-time notification:', newNotification);
+    onUpdateNotifications([newNotification, ...notifications]);
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
     
     toast({
       title: title,
@@ -155,16 +160,60 @@ const TaskManager = ({
 
   const handleDeleteTask = (taskId: string) => {
     if (userRole !== 'admin') return;
+<<<<<<< HEAD
     deleteTaskMutation.mutate(taskId);
+=======
+    
+    const taskToDelete = tasks.find(task => task.id === taskId);
+    if (taskToDelete) {
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      onUpdateTasks(updatedTasks);
+      createNotification(
+        'task_deleted',
+        'ٹاسک حذف کر دیا گیا',
+        `"${taskToDelete.title}" ٹاسک منتظم کی جانب سے حذف کر دیا گیا ہے`
+      );
+    }
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
   };
 
   const handleSaveTask = (taskData: Omit<Task, 'id' | 'created_at'>) => {
     if (userRole !== 'admin') return;
     
     if (modalMode === 'create') {
+<<<<<<< HEAD
       addTaskMutation.mutate(taskData);
     } else if (currentTask) {
       updateTaskMutation.mutate({ ...currentTask, ...taskData });
+=======
+      const newTask: Task = {
+        ...taskData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      console.log('Adding new task with realtime sync:', newTask);
+      const updatedTasks = [...tasks, newTask];
+      onUpdateTasks(updatedTasks);
+      createNotification(
+        'task_created',
+        'نیا ٹاسک بنایا گیا',
+        `"${newTask.title}" نام کا نیا ٹاسک ${newTask.assignedTo} کو تفویض کیا گیا ہے`
+      );
+    } else if (currentTask) {
+      const updatedTask = { ...currentTask, ...taskData };
+      console.log('Updating task with realtime sync:', updatedTask);
+      const updatedTasks = tasks.map(task => 
+        task.id === currentTask.id 
+          ? updatedTask
+          : task
+      );
+      onUpdateTasks(updatedTasks);
+      createNotification(
+        'task_updated',
+        'ٹاسک اپڈیٹ ہوا',
+        `"${taskData.title}" ٹاسک میں منتظم کی جانب سے تبدیلی کی گئی ہے`
+      );
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
     }
     setIsModalOpen(false);
   };
@@ -175,7 +224,16 @@ const TaskManager = ({
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       const updatedTask = { ...task, status: newStatus };
+<<<<<<< HEAD
       updateTaskMutation.mutate(updatedTask);
+=======
+      const updatedTasks = tasks.map(task => 
+        task.id === taskId 
+          ? updatedTask
+          : task
+      );
+      onUpdateTasks(updatedTasks);
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
       
       const statusLabels = {
         todo: 'کرنا ہے',
@@ -194,14 +252,25 @@ const TaskManager = ({
 
   const handleMemberTaskUpdate = (taskId: string, progress: number, memberNotes: string) => {
     const task = tasks.find(t => t.id === taskId);
+<<<<<<< HEAD
     if (task && task.assigned_to_name === userName) {
       const updatedTask = { ...task, progress, member_notes: memberNotes };
       updateTaskMutation.mutate(updatedTask);
+=======
+    if (task && task.assignedTo === userName) {
+      const updatedTask = { ...task, progress, memberNotes };
+      const updatedTasks = tasks.map(t => 
+        t.id === taskId 
+          ? updatedTask
+          : t
+      );
+      onUpdateTasks(updatedTasks);
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
       
       createNotification(
         'task_updated',
         'رکن کی جانب سے ٹاسک اپڈیٹ',
-        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے - ${memberNotes}`
+        `${userName} نے "${task.title}" میں ${progress}% پیش قدمی کی اطلاع دی ہے`
       );
     }
   };

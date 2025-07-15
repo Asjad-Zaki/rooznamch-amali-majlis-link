@@ -37,24 +37,43 @@ const TaskBoard = ({
   const getTasksByStatus = (status: Task['status']) => {
     let filteredTasks = tasks.filter(task => task.status === status);
     
-    // For members, show only their assigned tasks
+    console.log(`TaskBoard - All ${status} tasks:`, filteredTasks.map(t => ({ title: t.title, assignedTo: t.assignedTo })));
+    
+    // For members, show only their assigned tasks (exact name match)
     if (userRole === 'member') {
+<<<<<<< HEAD
       filteredTasks = filteredTasks.filter(task => 
         task.assigned_to_name && task.assigned_to_name.toLowerCase() === userName.toLowerCase() // Use assigned_to_name
       );
+=======
+      filteredTasks = filteredTasks.filter(task => {
+        const isAssigned = task.assignedTo && task.assignedTo.trim() === userName.trim();
+        console.log(`TaskBoard - Checking task "${task.title}": assignedTo="${task.assignedTo}", userName="${userName}", match=${isAssigned}`);
+        return isAssigned;
+      });
+>>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
     }
     
+    console.log(`TaskBoard - Final ${status} tasks for ${userRole} ${userName}:`, filteredTasks.length);
     return filteredTasks;
   };
 
-  console.log('TaskBoard - Current tasks:', tasks);
-  console.log('TaskBoard - UserRole:', userRole, 'UserName:', userName);
+  console.log('TaskBoard - Rendering with:', {
+    totalTasks: tasks.length,
+    userRole,
+    userName,
+    tasksPerStatus: {
+      todo: tasks.filter(t => t.status === 'todo').length,
+      inprogress: tasks.filter(t => t.status === 'inprogress').length,
+      review: tasks.filter(t => t.status === 'review').length,
+      done: tasks.filter(t => t.status === 'done').length
+    }
+  });
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">
       {statusColumns.map((column) => {
         const columnTasks = getTasksByStatus(column.id as Task['status']);
-        console.log(`TaskBoard - ${column.title} tasks:`, columnTasks);
         
         return (
           <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
@@ -97,7 +116,7 @@ const TaskBoard = ({
                 ))}
                 {columnTasks.length === 0 && (
                   <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
-                    کوئی ٹاسک نہیں
+                    {userRole === 'member' ? 'آپ کے لیے کوئی ٹاسک نہیں' : 'کوئی ٹاسک نہیں'}
                   </div>
                 )}
               </div>
