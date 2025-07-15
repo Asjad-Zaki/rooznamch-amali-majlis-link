@@ -4,24 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoginFormProps {
   onLogin: (role: 'admin' | 'member', name: string, userId: string) => void;
-  onSwitchToRegister: () => void; // New prop to switch to register form
+  onSwitchToRegister: () => void;
 }
 
 const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Admin login states
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  
+  // Member login states
+  const [memberSecretNumber, setMemberSecretNumber] = useState('');
+  
+  // Common states
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
-<<<<<<< HEAD
-  const { toast } = useToast();
-=======
   const [activeTab, setActiveTab] = useState('member');
+  const { toast } = useToast();
 
   // Page load animation
   useEffect(() => {
@@ -30,25 +35,17 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsPageLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    console.log('LoginForm: Attempting login for email:', email);
+    console.log('LoginForm: Attempting admin login for email:', adminEmail);
 
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
+        email: adminEmail,
+        password: adminPassword,
       });
 
       if (authError) {
@@ -70,7 +67,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         .eq('id', data.user?.id)
         .single();
 
-      if (profileError || !profile || !profile.is_active) {
+      if (profileError || !profile || !profile.is_active || profile.role !== 'admin') {
         console.error('LoginForm: Profile verification failed. Profile:', profile, 'Error:', profileError?.message);
         setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے');
         toast({
@@ -78,10 +75,10 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
           description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے",
           variant: "destructive",
         });
-        await supabase.auth.signOut(); // Sign out if profile is invalid or inactive
+        await supabase.auth.signOut();
         return;
       }
-      console.log('LoginForm: Profile verified:', profile);
+      console.log('LoginForm: Admin profile verified:', profile);
 
       onLogin(profile.role, profile.name, profile.id);
       toast({
@@ -90,7 +87,53 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
       });
 
     } catch (err: any) {
-      console.error('LoginForm: Login catch error:', err.message);
+      console.error('LoginForm: Admin login catch error:', err.message);
+      setError('لاگ ان میں خرابی ہوئی: ' + err.message);
+      toast({
+        title: "لاگ ان میں خرابی",
+        description: 'لاگ ان میں خرابی ہوئی',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMemberLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    console.log('LoginForm: Attempting member login with secret number:', memberSecretNumber);
+
+    try {
+      // Find member by secret number
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, role, is_active')
+        .eq('secret_number', memberSecretNumber)
+        .eq('role', 'member')
+        .single();
+
+      if (profileError || !profile || !profile.is_active) {
+        console.error('LoginForm: Member profile verification failed. Profile:', profile, 'Error:', profileError?.message);
+        setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
+        toast({
+          title: "لاگ ان ناکام",
+          description: "غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے",
+          variant: "destructive",
+        });
+        return;
+      }
+      console.log('LoginForm: Member profile verified:', profile);
+
+      onLogin(profile.role, profile.name, profile.id);
+      toast({
+        title: "لاگ ان کامیاب",
+        description: `خوش آمدید، ${profile.name}`,
+      });
+
+    } catch (err: any) {
+      console.error('LoginForm: Member login catch error:', err.message);
       setError('لاگ ان میں خرابی ہوئی: ' + err.message);
       toast({
         title: "لاگ ان میں خرابی",
@@ -104,49 +147,30 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-3 sm:p-4 lg:p-6 relative overflow-hidden">
-<<<<<<< HEAD
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-=======
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Primary floating orbs */}
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
         <div className="absolute top-1/4 left-1/4 w-32 h-32 sm:w-40 sm:h-40 lg:w-64 lg:h-64 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-float"></div>
         <div className="absolute top-3/4 right-1/4 w-28 h-28 sm:w-36 sm:h-36 lg:w-56 lg:h-56 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float animation-delay-1000"></div>
         <div className="absolute bottom-1/4 left-1/3 w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full blur-3xl animate-float animation-delay-2000"></div>
         
-<<<<<<< HEAD
-        <div className="absolute top-1/2 right-1/3 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-500/15 to-orange-500/15 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-1/3 right-1/2 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-indigo-500/15 to-violet-500/15 rounded-full blur-2xl animate-pulse animation-delay-1500"></div>
-        
-=======
         {/* Secondary accent orbs */}
         <div className="absolute top-1/2 right-1/3 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-500/15 to-orange-500/15 rounded-full blur-2xl animate-pulse"></div>
         <div className="absolute bottom-1/3 right-1/2 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-indigo-500/15 to-violet-500/15 rounded-full blur-2xl animate-pulse animation-delay-1500"></div>
         
         {/* Floating particles */}
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
         <div className="absolute top-1/6 left-2/3 w-3 h-3 bg-white/30 rounded-full animate-ping"></div>
         <div className="absolute bottom-1/6 left-1/6 w-2 h-2 bg-blue-400/40 rounded-full animate-ping animation-delay-500"></div>
         <div className="absolute top-2/3 right-1/6 w-4 h-4 bg-purple-400/30 rounded-full animate-ping animation-delay-1000"></div>
       </div>
 
-<<<<<<< HEAD
-=======
       {/* Geometric patterns */}
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 w-8 h-8 border border-white rotate-45 animate-spin-slow"></div>
         <div className="absolute bottom-20 right-20 w-6 h-6 border border-white rotate-12 animate-spin-slow animation-delay-2000"></div>
         <div className="absolute top-1/2 left-20 w-4 h-4 bg-white rounded-full animate-pulse"></div>
       </div>
 
-<<<<<<< HEAD
-      <Card className={`w-full max-w-sm sm:max-w-md lg:max-w-lg relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/50 transition-all duration-1000 ${isPageLoaded ? 'animate-card-entrance' : 'opacity-0 scale-90'}`}>
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-lg blur-xl animate-glow-pulse"></div>
-        
-        <CardHeader className="text-center pb-4 sm:pb-6 relative z-10">
-=======
       {/* Main Login Card */}
       <Card className={`w-full max-w-sm sm:max-w-md lg:max-w-lg relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/50 transition-all duration-1000 ${isPageLoaded ? 'animate-card-entrance' : 'opacity-0 scale-90'}`}>
         {/* Card glow effect */}
@@ -154,7 +178,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         
         <CardHeader className="text-center pb-4 sm:pb-6 relative z-10">
           {/* Logo with 3D effect */}
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
           <div className="flex justify-center mb-4 sm:mb-6">
             <div className="relative group">
               <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
@@ -176,63 +199,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         </CardHeader>
         
         <CardContent className="relative z-10">
-<<<<<<< HEAD
-          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" dir="rtl" className="text-sm text-white/90 font-medium">
-                ای میل
-              </Label>
-              <div className="relative group">
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  dir="rtl"
-                  placeholder="آپ کا ای میل داخل کریں"
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
-                />
-                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" dir="rtl" className="text-sm text-white/90 font-medium">
-                پاس ورڈ
-              </Label>
-              <div className="relative group">
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  dir="rtl"
-                  placeholder="آپ کا پاس ورڈ داخل کریں"
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all duration-300 hover:bg-white/15 group-hover:shadow-lg group-hover:shadow-green-500/20"
-                />
-                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-              </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-green-500 to-cyan-600 hover:from-green-600 hover:to-cyan-700 text-white font-medium py-2.5 sm:py-3 text-sm sm:text-base shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transform transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={isLoading}
-              dir="rtl"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  لاگ ان ہو رہا ہے...
-                </div>
-              ) : (
-                'لاگ ان'
-              )}
-            </Button>
-          </form>
-=======
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Enhanced TabsList with 3D effects */}
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg p-1 transform transition-all duration-500 animate-slide-up">
@@ -356,7 +322,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
               </form>
             </TabsContent>
           </Tabs>
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
           
           {/* Enhanced Error Alert */}
           {error && (
@@ -366,7 +331,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
               </AlertDescription>
             </Alert>
           )}
-<<<<<<< HEAD
 
           <div className="mt-6 text-center text-white/80 text-sm" dir="rtl">
             اکاؤنٹ نہیں ہے؟{' '}
@@ -377,17 +341,9 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         </CardContent>
       </Card>
 
-      <style>{`
-=======
-          
-         
-        </CardContent>
-      </Card>
-
       {/* Enhanced Custom Styles */}
       <style>{`
         /* Advanced Animations */
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
         @keyframes card-entrance {
           0% {
             opacity: 0;
@@ -521,8 +477,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
           animation-delay: 2s;
         }
 
-<<<<<<< HEAD
-=======
         /* Responsive improvements */
         @media (max-width: 640px) {
           .animate-float {
@@ -535,7 +489,6 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         }
 
         /* Custom scrollbar for better UX */
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
         ::-webkit-scrollbar {
           width: 6px;
         }
@@ -553,10 +506,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
           background: rgba(255, 255, 255, 0.5);
         }
 
-<<<<<<< HEAD
-=======
         /* Enhanced focus states */
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
         .focus-visible {
           outline: 2px solid rgba(59, 130, 246, 0.5);
           outline-offset: 2px;

@@ -1,10 +1,6 @@
-import React from 'react';
+import React from 'react';  
 import { Button } from '@/components/ui/button';
-<<<<<<< HEAD
-import { X, CheckCircle, Trash2, PlusCircle, FilePenLine, Info } from 'lucide-react';
-=======
 import { X, CheckCircle, Trash2, AlertTriangle } from 'lucide-react';
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -25,12 +21,8 @@ interface NotificationPanelProps {
   onClose: () => void;
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
-<<<<<<< HEAD
-  onDelete: (notificationId: string) => void;
-=======
   onDeleteNotification?: (notificationId: string) => void;
   onClearAll?: () => void;
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 }
 
 const NotificationPanel = ({ 
@@ -39,12 +31,8 @@ const NotificationPanel = ({
   onClose, 
   onMarkAsRead, 
   onMarkAllAsRead,
-<<<<<<< HEAD
-  onDelete
-=======
   onDeleteNotification,
   onClearAll
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
 }: NotificationPanelProps) => {
   const isMobile = useIsMobile();
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -77,7 +65,6 @@ const NotificationPanel = ({
     }
   };
 
-<<<<<<< HEAD
   // Common content for the notification list area
   const notificationListContent = (
     <div className="flex-1 overflow-y-auto py-4">
@@ -158,15 +145,6 @@ const NotificationPanel = ({
                   سب پڑھا گیا
                 </Button>
               )}
-=======
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg max-h-[90vh] flex flex-col">
-        <Card className="flex-1 overflow-hidden shadow-2xl">
-          <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-green-600 text-white">
-            <div className="flex justify-between items-center mb-2">
-              <CardTitle className="text-lg font-bold" dir="rtl">اطلاعات</CardTitle>
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
               <Button
                 variant="ghost"
                 size="sm"
@@ -176,45 +154,6 @@ const NotificationPanel = ({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-<<<<<<< HEAD
-          </DrawerHeader>
-          {notificationListContent}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed top-0 right-0 h-full w-full max-w-sm rounded-none border-l p-4 flex flex-col">
-        <DialogHeader className="p-0 pb-3 border-b flex justify-between items-center">
-          <DialogTitle dir="rtl">اطلاعات</DialogTitle>
-          <div className="flex items-center space-x-2">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onMarkAllAsRead}
-                className="text-xs"
-                dir="rtl"
-              >
-                سب پڑھا گیا
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-        {notificationListContent}
-      </DialogContent>
-    </Dialog>
-=======
             
             <div className="flex flex-wrap gap-2 items-center justify-between">
               {unreadCount > 0 && (
@@ -334,7 +273,6 @@ const NotificationPanel = ({
         </Card>
       </div>
     </div>
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
   );
 };
 

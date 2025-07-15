@@ -1,10 +1,12 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AuthPage from '@/components/AuthPage';
 import Dashboard from '@/components/Dashboard';
+import { DatabaseRealtimeProvider } from '@/components/DatabaseRealtimeProvider';
+import { Task } from '@/components/TaskCard';
 import { User } from '@/components/UserManagement';
 import { Notification } from '@/components/NotificationPanel';
-import { useAuth } from '@/integrations/supabase/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
@@ -92,23 +94,7 @@ const Index = () => {
     });
   }, [viewMode, actualUserRole, userName, userId, currentUserProfile]);
 
-
-  if (loading || !session || !currentUserProfile) {
-=======
-
-import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import AuthPage from '@/components/AuthPage';
-import Dashboard from '@/components/Dashboard';
-import { DatabaseRealtimeProvider } from '@/contexts/DatabaseRealtimeContext';
-
-const Index = () => {
-  const { user, profile, loading } = useAuth();
-
-  console.log('Index - Loading:', loading, 'User:', user, 'Profile:', profile);
-
   if (loading) {
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="relative">
@@ -123,38 +109,28 @@ const Index = () => {
     );
   }
 
-  // Show login page if no user or profile
-  if (!user || !profile) {
-    console.log('Showing AuthPage - No user or profile');
+  // Show login page if no session or profile
+  if (!session || !currentUserProfile) {
+    console.log('Showing AuthPage - No session or profile');
     return <AuthPage />;
   }
 
-  console.log('Showing Dashboard - User authenticated with profile:', profile.role);
+  console.log('Showing Dashboard - User authenticated with profile:', actualUserRole);
 
   return (
-<<<<<<< HEAD
-    <Dashboard
-      userRole={viewMode} // This is the current view mode (can be switched by admin)
-      userName={userName}
-      userId={userId}
-      onLogout={handleLogout}
-      onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined} // Only show switch if actual user is admin
-      notifications={notifications}
-      onUpdateNotifications={setNotifications}
-      viewMode={viewMode} // Pass viewMode explicitly
-      actualRole={actualUserRole} // Pass actual role explicitly
-    />
-=======
     <DatabaseRealtimeProvider>
-      <Dashboard 
-        userRole={profile.role}
-        userName={profile.name}
-        userId={profile.id}
-        actualRole={profile.role}
-        viewMode={profile.role}
+      <Dashboard
+        userRole={viewMode} // This is the current view mode (can be switched by admin)
+        userName={userName}
+        userId={userId}
+        onLogout={handleLogout}
+        onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined} // Only show switch if actual user is admin
+        notifications={notifications}
+        onUpdateNotifications={setNotifications}
+        viewMode={viewMode} // Pass viewMode explicitly
+        actualRole={actualUserRole} // Pass actual role explicitly
       />
     </DatabaseRealtimeProvider>
->>>>>>> 8d2399815ffd473f0360df2516ab0f7fc292f5d3
   );
 };
 
