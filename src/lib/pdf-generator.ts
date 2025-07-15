@@ -1,188 +1,81 @@
-import jsPDF from 'jspdf';
-import * as autoTable from 'jspdf-autotable'; // Changed import to ensure side effects are applied
+
 import { Task } from '@/components/TaskCard';
 
-export const generateTasksReportPdf = (tasks: Task[], userName: string) => {
-  const doc = new jsPDF({
-    orientation: 'landscape', // Use landscape for wider tables
-    unit: 'pt',
-    format: 'a4',
-    putOnlyUsedFonts: true,
-    floatPrecision: 16 // for more precise positioning
-  });
+export const generatePDFReport = (tasks: Task[], userName: string) => {
+  try {
+    console.log('Generating report with tasks:', tasks.length);
+    
+    if (tasks.length === 0) {
+      throw new Error('رپورٹ بنانے کے لیے کم از کم ایک ٹاسک ہونا ضروری ہے');
+    }
 
-  let yPos = 40;
+    const currentDate = new Date().toLocaleDateString('ur-PK');
+    const currentTime = new Date().toLocaleTimeString('ur-PK');
+    
+    const statusLabels = {
+      todo: 'کرنا ہے',
+      inprogress: 'جاری',
+      review: 'جائزہ',
+      done: 'مکمل'
+    };
 
-  // Add a title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('ٹاسک رپورٹ', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' }); // Centered title
-  yPos += 25;
+    const priorityLabels = {
+      high: 'زیادہ',
+      medium: 'درمیانہ',
+      low: 'کم'
+    };
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
-  doc.text(`رپورٹ تیار کردہ: ${userName}`, doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
-  yPos += 15;
-  doc.text(`تاریخ: ${new Date().toLocaleDateString('ur-PK')}`, doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
-  yPos += 30; // Space before summary
+    const reportContent = `مجلس دعوۃ الحق - ٹاسک رپورٹ
+============================================
 
-  // --- Summary Section ---
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('خلاصہ', doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
-  yPos += 20;
+تاریخ: ${currentDate}
+وقت: ${currentTime}
+رپورٹ تیار کردہ: ${userName}
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+خلاصہ:
+========
+کل ٹاسکس: ${tasks.length}
+مکمل ہونے والے: ${tasks.filter(t => t.status === 'done').length}  
+جاری: ${tasks.filter(t => t.status === 'inprogress').length}
+جائزہ میں: ${tasks.filter(t => t.status === 'review').length}
+باقی: ${tasks.filter(t => t.status === 'todo').length}
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === 'done').length;
-  const inProgressTasks = tasks.filter(t => t.status === 'inprogress').length;
-  const todoTasks = tasks.filter(t => t.status === 'todo').length;
-  const reviewTasks = tasks.filter(t => t.status === 'review').length;
+تفصیلی فہرست:
+===============
 
-  const priorityCounts = {
-    low: tasks.filter(t => t.priority === 'low').length,
-    medium: tasks.filter(t => t.priority === 'medium').length,
-    high: tasks.filter(t => t.priority === 'high').length,
-  };
+${tasks.map((task, index) => `
+${index + 1}. ٹاسک: ${task.title}
+   تفصیل: ${task.description}
+   ذمہ دار: ${task.assigned_to_name}
+   حالت: ${statusLabels[task.status] || task.status}
+   ترجیح: ${priorityLabels[task.priority] || task.priority}
+   پیش قدمی: ${task.progress}%
+   شروعاتی تاریخ: ${new Date(task.created_at).toLocaleDateString('ur-PK')}
+   آخری تاریخ: ${new Date(task.due_date).toLocaleDateString('ur-PK')}
+   رکن کی رپورٹ: ${task.member_notes || 'کوئی رپورٹ نہیں'}
+   
+-------------------------------------------
+`).join('\n')}
 
-  const summaryData = [
-    ['کل ٹاسکس:', totalTasks],
-    ['مکمل:', completedTasks],
-    ['جاری:', inProgressTasks],
-    ['کرنا ہے:', todoTasks],
-    ['جائزہ:', reviewTasks],
-    ['ترجیح کم:', priorityCounts.low],
-    ['ترجیح درمیانہ:', priorityCounts.medium],
-    ['ترجیح زیادہ:', priorityCounts.high],
-  ];
+رپورٹ مکمل ہونے کا وقت: ${new Date().toLocaleString('ur-PK')}
+    `;
 
-  (doc as any).autoTable({
-    startY: yPos,
-    head: [['تفصیل', 'تعداد']],
-    body: summaryData,
-    theme: 'grid',
-    styles: {
-      font: 'helvetica',
-      fontSize: 10,
-      cellPadding: 4,
-      halign: 'right',
-      overflow: 'linebreak',
-    },
-    headStyles: {
-      fillColor: [59, 130, 246], // Tailwind blue-500
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      halign: 'right',
-    },
-    bodyStyles: {
-      textColor: [0, 0, 0],
-    },
-    columnStyles: {
-      0: { cellWidth: 100 }, // Description column
-      1: { cellWidth: 50, halign: 'center' }, // Count column
-    },
-    margin: { right: doc.internal.pageSize.getWidth() - 200 }, // Align summary table to the right
-    rtl: true,
-  });
+    // Create and download the report as a text file
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `majlis-task-report-${new Date().getTime()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
-  yPos = (doc as any).autoTable.previous.finalY + 30; // Update yPos after summary table
+    console.log('Report generated successfully with', tasks.length, 'tasks');
+    return true;
 
-  // --- Detailed Tasks Section ---
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('تفصیلی ٹاسکس', doc.internal.pageSize.getWidth() - 40, yPos, { align: 'right' });
-  yPos += 20;
-
-  // Prepare table data
-  const tableColumn = [
-    { header: 'ٹاسک کا نام', dataKey: 'title' },
-    { header: 'تفصیل', dataKey: 'description' },
-    { header: 'حالت', dataKey: 'status' },
-    { header: 'ترجیح', dataKey: 'priority' },
-    { header: 'ذمہ دار', dataKey: 'assigned_to_name' },
-    { header: 'آخری تاریخ', dataKey: 'due_date' },
-    { header: 'پیش قدمی (%)', dataKey: 'progress' },
-    { header: 'رکن کی رپورٹ', dataKey: 'member_notes' },
-  ];
-
-  const tableRows = tasks.map(task => ({
-    title: task.title,
-    description: task.description,
-    status: getStatusLabel(task.status),
-    priority: getPriorityLabel(task.priority),
-    assigned_to_name: task.assigned_to_name,
-    due_date: new Date(task.due_date).toLocaleDateString('ur-PK'),
-    progress: task.progress,
-    member_notes: task.member_notes,
-  }));
-
-  (doc as any).autoTable({
-    head: [tableColumn.map(col => col.header)],
-    body: tableRows.map(row => Object.values(row)),
-    startY: yPos,
-    theme: 'striped',
-    styles: {
-      font: 'helvetica',
-      fontSize: 10,
-      cellPadding: 5,
-      halign: 'right', // Align text to right for RTL
-      overflow: 'linebreak',
-      cellWidth: 'wrap',
-    },
-    headStyles: {
-      fillColor: [59, 130, 246], // Tailwind blue-500
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      halign: 'right',
-    },
-    bodyStyles: {
-      textColor: [0, 0, 0],
-    },
-    alternateRowStyles: {
-      fillColor: [240, 240, 240], // Light gray for alternate rows
-    },
-    columnStyles: {
-      // Specific column styles if needed
-      0: { cellWidth: 'auto' }, // Title
-      1: { cellWidth: 'auto' }, // Description
-      2: { cellWidth: 60 }, // Status
-      3: { cellWidth: 60 }, // Priority
-      4: { cellWidth: 80 }, // Assigned To
-      5: { cellWidth: 70 }, // Due Date
-      6: { cellWidth: 60 }, // Progress
-      7: { cellWidth: 'auto' }, // Member Notes
-    },
-    didDrawPage: (data: any) => {
-      // Footer
-      let str = 'صفحہ ' + doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      doc.text(str, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 20, { align: 'center' });
-    },
-    // Enable RTL mode for autoTable
-    rtl: true,
-  });
-
-  doc.save('tasks_report.pdf');
-};
-
-// Helper functions for labels
-const getStatusLabel = (status: Task['status']) => {
-  switch (status) {
-    case 'todo': return 'کرنا ہے';
-    case 'inprogress': return 'جاری';
-    case 'review': return 'جائزہ';
-    case 'done': return 'مکمل';
-    default: return status;
-  }
-};
-
-const getPriorityLabel = (priority: Task['priority']) => {
-  switch (priority) {
-    case 'low': return 'کم';
-    case 'medium': return 'درمیانہ';
-    case 'high': return 'زیادہ';
-    default: return priority;
+  } catch (error) {
+    console.error('Error generating report:', error);
+    throw error;
   }
 };

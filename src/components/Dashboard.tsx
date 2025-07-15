@@ -307,12 +307,7 @@ ${index + 1}. ٹاسک: ${task.title}
               </TabsContent>
               
               <TabsContent value="users">
-                <UserManagement
-                  onAddUser={() => {}}
-                  onEditUser={() => {}}
-                  onDeleteUser={() => {}}
-                  onToggleUserStatus={() => {}}
-                />
+                <UserManagement />
               </TabsContent>
             </Tabs>
           </div>

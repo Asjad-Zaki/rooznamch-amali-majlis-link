@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
       }
       console.log('LoginForm: Admin profile verified:', profile);
 
-      onLogin(profile.role, profile.name, profile.id);
+      onLogin(profile.role as 'admin' | 'member', profile.name, profile.id);
       toast({
         title: "لاگ ان کامیاب",
         description: `خوش آمدید، ${profile.name}`,
@@ -126,7 +127,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
       }
       console.log('LoginForm: Member profile verified:', profile);
 
-      onLogin(profile.role, profile.name, profile.id);
+      onLogin(profile.role as 'admin' | 'member', profile.name, profile.id);
       toast({
         title: "لاگ ان کامیاب",
         description: `خوش آمدید، ${profile.name}`,
