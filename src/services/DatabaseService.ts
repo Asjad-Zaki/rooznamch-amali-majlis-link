@@ -21,11 +21,11 @@ export class DatabaseService {
         description: task.description || '',
         status: task.status as Task['status'],
         priority: task.priority as Task['priority'],
-        assignedTo: task.assigned_to_name || '',
-        createdAt: task.created_at,
-        dueDate: task.due_date || '',
+        assigned_to_name: task.assigned_to_name || '',
+        created_at: task.created_at,
+        due_date: task.due_date || '',
         progress: task.progress || 0,
-        memberNotes: task.member_notes || ''
+        member_notes: task.member_notes || ''
       }));
     } catch (error) {
       console.error('Error in getTasks:', error);
@@ -33,17 +33,17 @@ export class DatabaseService {
     }
   }
 
-  static async createTask(task: Omit<Task, 'id' | 'createdAt'>): Promise<Task | null> {
+  static async createTask(task: Omit<Task, 'id' | 'created_at'>): Promise<Task | null> {
     try {
       const { data, error } = await (supabase as any).from('tasks').insert({
         title: task.title,
         description: task.description,
         status: task.status,
         priority: task.priority,
-        assigned_to_name: task.assignedTo,
-        due_date: task.dueDate,
+        assigned_to_name: task.assigned_to_name,
+        due_date: task.due_date,
         progress: task.progress,
-        member_notes: task.memberNotes
+        member_notes: task.member_notes
       }).select();
 
       if (error) {
@@ -60,11 +60,11 @@ export class DatabaseService {
         description: taskData.description || '',
         status: taskData.status as Task['status'],
         priority: taskData.priority as Task['priority'],
-        assignedTo: taskData.assigned_to_name || '',
-        createdAt: taskData.created_at,
-        dueDate: taskData.due_date || '',
+        assigned_to_name: taskData.assigned_to_name || '',
+        created_at: taskData.created_at,
+        due_date: taskData.due_date || '',
         progress: taskData.progress || 0,
-        memberNotes: taskData.member_notes || ''
+        member_notes: taskData.member_notes || ''
       };
     } catch (error) {
       console.error('Error in createTask:', error);
@@ -79,10 +79,10 @@ export class DatabaseService {
         description: updates.description,
         status: updates.status,
         priority: updates.priority,
-        assigned_to_name: updates.assignedTo,
-        due_date: updates.dueDate,
+        assigned_to_name: updates.assigned_to_name,
+        due_date: updates.due_date,
         progress: updates.progress,
-        member_notes: updates.memberNotes
+        member_notes: updates.member_notes
       }).eq('id', taskId);
 
       if (error) {
@@ -128,8 +128,8 @@ export class DatabaseService {
         title: notification.title,
         message: notification.message,
         type: notification.type as Notification['type'],
-        timestamp: notification.created_at,
-        read: notification.is_read
+        created_at: notification.created_at,
+        is_read: notification.is_read
       }));
     } catch (error) {
       console.error('Error in getNotifications:', error);
@@ -137,7 +137,7 @@ export class DatabaseService {
     }
   }
 
-  static async createNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Promise<boolean> {
+  static async createNotification(notification: Omit<Notification, 'id' | 'created_at' | 'is_read'>): Promise<boolean> {
     try {
       const { error } = await (supabase as any).from('notifications').insert({
         title: notification.title,

@@ -3,19 +3,28 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthPage from '@/components/AuthPage';
 import Dashboard from '@/components/Dashboard';
-import { DatabaseRealtimeProvider } from '@/components/DatabaseRealtimeProvider';
+import { DatabaseRealtimeProvider } from '@/contexts/DatabaseRealtimeContext';
 import { Task } from '@/components/TaskCard';
-import { User } from '@/components/UserManagement';
-import { Notification } from '@/components/NotificationPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'member';
+  password: string;
+  secretNumber: string;
+  createdAt: string;
+  isActive: boolean;
+}
 
 const Index = () => {
   const { session, loading, user: authUser } = useAuth();
   const navigate = useNavigate();
 
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // State to control the current view mode (admin can switch to member view)
   const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // Default to 'member'
@@ -45,10 +54,20 @@ const Index = () => {
           return;
         }
         console.log('Index.tsx (useEffect 2): Fetched user profile:', profileData);
-        setCurrentUserProfile(profileData as User);
+        const userProfile: User = {
+          id: profileData.id,
+          name: profileData.name,
+          email: profileData.email,
+          role: profileData.role as 'admin' | 'member',
+          password: '',
+          secretNumber: profileData.secret_number || '',
+          createdAt: profileData.created_at,
+          isActive: profileData.is_active
+        };
+        setCurrentUserProfile(userProfile);
         // Set the initial view mode based on the fetched user's actual role
-        setViewMode((profileData as User).role);
-        console.log('Index.tsx (useEffect 2): Initial viewMode set to:', (profileData as User).role);
+        setViewMode(userProfile.role);
+        console.log('Index.tsx (useEffect 2): Initial viewMode set to:', userProfile.role);
       }
     };
 

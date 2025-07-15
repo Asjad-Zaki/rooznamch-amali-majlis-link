@@ -189,7 +189,7 @@ const Header = ({
         }
         
         // Convert assignedTo name
-        const readableAssignee = convertUrduToReadable(task.assignedTo);
+        const readableAssignee = convertUrduToReadable(task.assigned_to_name);
         pdf.text(`Assigned To: ${readableAssignee}`, 30, yPosition);
         yPosition += 5;
         pdf.text(`Status: ${statusLabels[task.status]}`, 30, yPosition);
@@ -199,13 +199,13 @@ const Header = ({
         pdf.text(`Progress: ${task.progress}%`, 30, yPosition);
         yPosition += 5;
         
-        const dueDate = new Date(task.dueDate).toLocaleDateString('en-US');
+        const dueDate = new Date(task.due_date).toLocaleDateString('en-US');
         pdf.text(`Due Date: ${dueDate}`, 30, yPosition);
         yPosition += 5;
         
         // Convert member notes
-        if (task.memberNotes) {
-          const readableNotes = convertUrduToReadable(task.memberNotes);
+        if (task.member_notes) {
+          const readableNotes = convertUrduToReadable(task.member_notes);
           const notesLines = pdf.splitTextToSize(`Member Notes: ${readableNotes}`, pageWidth - 60);
           pdf.text(notesLines, 30, yPosition);
           yPosition += notesLines.length * 5;
@@ -215,7 +215,7 @@ const Header = ({
       });
       
       // Add footer with page numbers
-      const totalPages = pdf.internal.pages.length - 1;
+      const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
         pdf.setFontSize(8);

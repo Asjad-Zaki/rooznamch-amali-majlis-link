@@ -12,7 +12,7 @@ interface DashboardStatsProps {
 const DashboardStats = ({ tasks, userRole, userName }: DashboardStatsProps) => {
   const getFilteredTasks = () => {
     if (userRole === 'member') {
-      return tasks.filter(t => t.assignedTo === userName);
+      return tasks.filter(t => t.assigned_to_name === userName);
     }
     return tasks;
   };

@@ -12,7 +12,7 @@ interface DatabaseRealtimeContextType {
   profiles: Profile[];
   isConnected: boolean;
   loading: boolean;
-  createTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
+  createTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
@@ -101,7 +101,7 @@ export const DatabaseRealtimeProvider: React.FC<{ children: React.ReactNode }> =
   }, []);
 
   // CRUD operations
-  const createTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
+  const createTask = async (task: Omit<Task, 'id' | 'created_at'>) => {
     const newTask = await DatabaseService.createTask(task);
     if (newTask) {
       await DatabaseService.createNotification({

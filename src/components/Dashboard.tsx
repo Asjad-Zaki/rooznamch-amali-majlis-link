@@ -21,8 +21,8 @@ interface DashboardProps {
   userId: string;
   onLogout: () => void;
   onRoleSwitch?: () => void;
-  notifications: Notification[];
-  onUpdateNotifications: (notifications: Notification[]) => void;
+  notifications: any[];
+  onUpdateNotifications: (notifications: any[]) => void;
   viewMode?: 'admin' | 'member';
   actualRole?: 'admin' | 'member';
 }
@@ -91,7 +91,7 @@ const Dashboard = ({
     await deleteTask(taskId);
   };
 
-  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+  const handleSaveTask = async (taskData: Omit<Task, 'id' | 'created_at'>) => {
     if (userRole !== 'admin') return;
     
     if (modalMode === 'create') {
@@ -107,8 +107,8 @@ const Dashboard = ({
     await updateTask(taskId, { status: newStatus });
   };
 
-  const handleMemberTaskUpdate = async (taskId: string, progress: number, memberNotes: string) => {
-    await updateTask(taskId, { progress, memberNotes });
+  const handleMemberTaskUpdate = async (taskId: string, progress: number, member_notes: string) => {
+    await updateTask(taskId, { progress, member_notes });
   };
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -116,7 +116,7 @@ const Dashboard = ({
   };
 
   const handleMarkAllAsRead = async () => {
-    const unreadNotifications = notifications.filter(n => !n.read);
+    const unreadNotifications = notifications.filter(n => !n.is_read);
     for (const notification of unreadNotifications) {
       await markNotificationAsRead(notification.id);
     }
@@ -173,13 +173,13 @@ const Dashboard = ({
 ${tasks.map((task, index) => `
 ${index + 1}. ٹاسک: ${task.title}
    تفصیل: ${task.description}
-   ذمہ دار: ${task.assignedTo}
+   ذمہ دار: ${task.assigned_to_name}
    حالت: ${statusLabels[task.status] || task.status}
    ترجیح: ${priorityLabels[task.priority] || task.priority}
    پیش قدمی: ${task.progress}%
-   شروعاتی تاریخ: ${new Date(task.createdAt).toLocaleDateString('ur-PK')}
-   آخری تاریخ: ${new Date(task.dueDate).toLocaleDateString('ur-PK')}
-   رکن کی رپورٹ: ${task.memberNotes || 'کوئی رپورٹ نہیں'}
+   شروعاتی تاریخ: ${new Date(task.created_at).toLocaleDateString('ur-PK')}
+   آخری تاریخ: ${new Date(task.due_date).toLocaleDateString('ur-PK')}
+   رکن کی رپورٹ: ${task.member_notes || 'کوئی رپورٹ نہیں'}
    
 -------------------------------------------
 `).join('\n')}
@@ -215,7 +215,7 @@ ${index + 1}. ٹاسک: ${task.title}
     }
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const unreadNotifications = notifications.filter(n => !n.is_read).length;
 
   const handleNotificationClick = () => {
     console.log('Notification icon clicked, opening panel');
@@ -308,16 +308,6 @@ ${index + 1}. ٹاسک: ${task.title}
               
               <TabsContent value="users">
                 <UserManagement
-                  users={profiles.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    email: p.email,
-                    role: p.role,
-                    password: '',
-                    secretNumber: p.secret_number,
-                    createdAt: p.created_at,
-                    isActive: p.is_active
-                  }))}
                   onAddUser={() => {}}
                   onEditUser={() => {}}
                   onDeleteUser={() => {}}
