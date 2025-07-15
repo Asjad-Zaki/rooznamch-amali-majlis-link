@@ -1,12 +1,11 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthPage from '@/components/AuthPage';
 import Dashboard from '@/components/Dashboard';
-import { DatabaseRealtimeProvider } from '@/contexts/DatabaseRealtimeContext';
-import { Task } from '@/components/TaskCard';
+import { DatabaseRealtimeProvider } from '@/components/DatabaseRealtimeProvider';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface User {
   id: string;
@@ -20,100 +19,57 @@ interface User {
 }
 
 const Index = () => {
-  const { session, loading, user: authUser } = useAuth();
+  const { session, loading, user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member');
 
-  // State to control the current view mode (admin can switch to member view)
-  const [viewMode, setViewMode] = useState<'admin' | 'member'>('member'); // Default to 'member'
-
+  // Redirect to login if not authenticated
   useEffect(() => {
-    console.log('Index.tsx (useEffect 1): Session, Loading, AuthUser:', { session, loading, authUser });
     if (!loading && !session) {
-      console.log('Index.tsx (useEffect 1): No session found, navigating to /login');
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
-  }, [session, loading, navigate, authUser]);
+  }, [session, loading, navigate]);
 
+  // Set initial view mode based on user role
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (authUser) {
-        console.log('Index.tsx (useEffect 2): Fetching user profile for authUser ID:', authUser.id);
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError) {
-          console.error('Index.tsx (useEffect 2): Error fetching user profile:', profileError);
-          await supabase.auth.signOut();
-          navigate('/login');
-          return;
-        }
-        console.log('Index.tsx (useEffect 2): Fetched user profile:', profileData);
-        const userProfile: User = {
-          id: profileData.id,
-          name: profileData.name,
-          email: profileData.email,
-          role: profileData.role as 'admin' | 'member',
-          password: '',
-          secretNumber: profileData.secret_number || '',
-          createdAt: profileData.created_at,
-          isActive: profileData.is_active
-        };
-        setCurrentUserProfile(userProfile);
-        // Set the initial view mode based on the fetched user's actual role
-        setViewMode(userProfile.role);
-        console.log('Index.tsx (useEffect 2): Initial viewMode set to:', userProfile.role);
-      }
-    };
-
-    if (!loading && session && authUser) {
-      fetchUserProfile();
+    if (profile?.role) {
+      setViewMode(profile.role);
     }
-  }, [session, loading, authUser, navigate]);
+  }, [profile?.role]);
 
-  // Derive userRole and userName from currentUserProfile
-  const actualUserRole = currentUserProfile?.role || 'member';
-  const userName = currentUserProfile?.name || authUser?.email || 'Guest';
-  const userId = currentUserProfile?.id || authUser?.id || '';
-
-  const handleLogout = async () => {
-    if (session) { // Only attempt to sign out if a session exists
-      const { error } = await supabase.auth.signOut();
+  const handleLogout = useCallback(async () => {
+    try {
+      console.log('Starting logout process...');
+      
+      // Clear all queries immediately for faster response
+      queryClient.clear();
+      
+      // Sign out
+      const { error } = await signOut();
+      
       if (error) {
-        console.error('Error logging out:', error);
+        console.error('Logout error:', error);
       } else {
-        navigate('/login');
+        console.log('Logout successful, redirecting...');
+        // Force navigation to login
+        navigate('/login', { replace: true });
       }
-    } else {
-      // If no session, just navigate to login
-      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if there's an error
+      navigate('/login', { replace: true });
     }
-  };
+  }, [signOut, navigate, queryClient]);
 
-  const handleRoleSwitch = () => {
-    // Only allow role switch if the actual user is an admin
-    if (actualUserRole === 'admin') {
+  const handleRoleSwitch = useCallback(() => {
+    if (profile?.role === 'admin') {
       setViewMode(prevMode => (prevMode === 'admin' ? 'member' : 'admin'));
-      console.log('Index.tsx: Role switched to:', viewMode === 'admin' ? 'member' : 'admin');
     }
-  };
+  }, [profile?.role]);
 
-  // Log for debugging before rendering Dashboard
-  useEffect(() => {
-    console.log('Index.tsx: Rendering Dashboard with:', {
-      viewMode: viewMode,
-      actualRole: actualUserRole,
-      userName: userName,
-      userId: userId,
-      currentUserProfile: currentUserProfile
-    });
-  }, [viewMode, actualUserRole, userName, userId, currentUserProfile]);
-
+  // Show loading spinner
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -130,25 +86,26 @@ const Index = () => {
   }
 
   // Show login page if no session or profile
-  if (!session || !currentUserProfile) {
-    console.log('Showing AuthPage - No session or profile');
+  if (!session || !profile) {
     return <AuthPage />;
   }
 
-  console.log('Showing Dashboard - User authenticated with profile:', actualUserRole);
+  const actualUserRole = profile.role;
+  const userName = profile.name || authUser?.email || 'Guest';
+  const userId = profile.id || authUser?.id || '';
 
   return (
     <DatabaseRealtimeProvider>
       <Dashboard
-        userRole={viewMode} // This is the current view mode (can be switched by admin)
+        userRole={viewMode}
         userName={userName}
         userId={userId}
         onLogout={handleLogout}
-        onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined} // Only show switch if actual user is admin
+        onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined}
         notifications={notifications}
         onUpdateNotifications={setNotifications}
-        viewMode={viewMode} // Pass viewMode explicitly
-        actualRole={actualUserRole} // Pass actual role explicitly
+        viewMode={viewMode}
+        actualRole={actualUserRole}
       />
     </DatabaseRealtimeProvider>
   );

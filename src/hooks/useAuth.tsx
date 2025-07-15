@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface Profile {
   id: string;
@@ -17,152 +18,172 @@ export interface Profile {
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchProfile(session.user.id, session.user.email);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string, userEmail?: string) => {
-    console.log('Fetching profile for user:', userId, userEmail);
-    try {
-      // Use direct table query with type assertion
-      const { data, error } = await (supabase as any).from('profiles').select('*').eq('id', userId);
-
-      console.log('Profile fetch result:', { data, error });
+  // Use React Query for profile data
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
         // Create default admin profile for admin@gmail.com
-        if (userEmail === 'admin@gmail.com') {
-          console.log('Creating default admin profile');
-          setProfile({
-            id: userId,
+        if (user.email === 'admin@gmail.com') {
+          return {
+            id: user.id,
             name: 'Admin User',
             email: 'admin@gmail.com',
-            role: 'admin',
+            role: 'admin' as const,
             secret_number: 'ADMIN123',
             is_active: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
-        } else {
-          console.log('No profile found and not admin, setting loading to false');
-          setProfile(null);
+          };
         }
-      } else if (data && data.length > 0) {
-        console.log('Profile found, setting profile data');
-        const profileData = data[0];
-        setProfile({
-          id: profileData.id,
-          name: profileData.name,
-          email: profileData.email,
-          role: profileData.role as 'admin' | 'member',
-          secret_number: profileData.secret_number,
-          is_active: profileData.is_active,
-          created_at: profileData.created_at,
-          updated_at: profileData.updated_at
-        });
-      } else {
-        console.log('No profile data found');
-        // Create default admin profile for admin email
-        if (userEmail === 'admin@gmail.com') {
-          console.log('Creating default admin profile (no data case)');
-          setProfile({
-            id: userId,
-            name: 'Admin User',
-            email: 'admin@gmail.com',
-            role: 'admin',
-            secret_number: 'ADMIN123',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        } else {
-          setProfile(null);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role as 'admin' | 'member',
+        secret_number: data.secret_number,
+        is_active: data.is_active,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  useEffect(() => {
+    let mounted = true;
+
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+        if (mounted) {
+          setLoading(false);
         }
       }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (event === 'SIGNED_OUT') {
+            // Clear all React Query cache on logout
+            queryClient.clear();
+          }
+          
+          if (!session) {
+            setLoading(false);
+          }
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
-      // Fallback for admin
-      if (userEmail === 'admin@gmail.com') {
-        console.log('Exception caught, creating admin profile');
-        setProfile({
-          id: userId,
-          name: 'Admin User',
-          email: 'admin@gmail.com',
-          role: 'admin',
-          secret_number: 'ADMIN123',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      } else {
-        setProfile(null);
-      }
-    } finally {
-      console.log('Setting loading to false');
-      setLoading(false);
+      console.error('Sign in error:', error);
+      return { error };
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
-  };
-
   const signUp = async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-        emailRedirectTo: `${window.location.origin}/`
-      }
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      return { error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    try {
+      setLoading(true);
+      
+      // Clear React Query cache first
+      queryClient.clear();
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Logout error:', error);
+        setLoading(false);
+        return { error };
+      }
+
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setLoading(false);
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Logout error:', error);
+      setLoading(false);
+      return { error };
+    }
   };
 
   return {
     user,
     session,
     profile,
-    loading,
+    loading: loading || profileLoading,
     signIn,
     signUp,
     signOut,
