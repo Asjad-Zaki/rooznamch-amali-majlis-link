@@ -123,23 +123,6 @@ const Dashboard = ({
     }
   };
 
-  // Handle user management (placeholder functions)
-  const handleAddUser = () => {
-    console.log('Add user functionality to be implemented');
-  };
-
-  const handleEditUser = () => {
-    console.log('Edit user functionality to be implemented');
-  };
-
-  const handleDeleteUser = () => {
-    console.log('Delete user functionality to be implemented');
-  };
-
-  const handleToggleUserStatus = () => {
-    console.log('Toggle user status functionality to be implemented');
-  };
-
   const handleTaskEdit = (task: Task) => {
     setSelectedTask(task);
     setIsTaskModalOpen(true);
@@ -153,6 +136,19 @@ const Dashboard = ({
   const handleTaskModalSave = async (updatedTask: Task) => {
     await handleTaskUpdate(updatedTask.id, updatedTask);
     handleTaskModalClose();
+  };
+
+  const handleAddTask = () => {
+    setSelectedTask(null);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
+    await handleTaskUpdate(taskId, { status: newStatus });
+  };
+
+  const handleMemberTaskUpdate = async (taskId: string, progress: number, memberNotes: string) => {
+    await handleTaskUpdate(taskId, { progress, member_notes: memberNotes });
   };
 
   // Show loading state
@@ -231,11 +227,14 @@ const Dashboard = ({
           {activeTab === 'tasks' && (
             <TaskBoard
               tasks={filteredTasks}
-              onTaskUpdate={handleTaskUpdate}
-              onTaskEdit={handleTaskEdit}
-              onTaskDelete={handleTaskDelete}
               userRole={userRole}
               userName={userName}
+              userId={userId}
+              onAddTask={userRole === 'admin' ? handleAddTask : undefined}
+              onEditTask={userRole === 'admin' ? handleTaskEdit : undefined}
+              onDeleteTask={userRole === 'admin' ? handleTaskDelete : undefined}
+              onStatusChange={userRole === 'admin' ? handleStatusChange : undefined}
+              onMemberTaskUpdate={handleMemberTaskUpdate}
               isLoading={tasksLoading}
             />
           )}
@@ -243,26 +242,25 @@ const Dashboard = ({
           {activeTab === 'management' && userRole === 'admin' && (
             <TaskManager
               tasks={filteredTasks}
+              profiles={profiles}
               onTaskCreate={handleTaskCreate}
               onTaskUpdate={handleTaskUpdate}
               onTaskDelete={handleTaskDelete}
-              profiles={profiles}
               isLoading={tasksLoading || profilesLoading}
             />
           )}
 
           {activeTab === 'users' && userRole === 'admin' && (
-            <UserManagement
-              onAddUser={handleAddUser}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
-              onToggleUserStatus={handleToggleUserStatus}
-            />
+            <UserManagement />
           )}
 
           {activeTab === 'analytics' && userRole === 'admin' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DashboardStats tasks={filteredTasks} />
+              <DashboardStats 
+                tasks={filteredTasks} 
+                userRole={userRole}
+                userName={userName}
+              />
               <DashboardCharts tasks={filteredTasks} />
             </div>
           )}

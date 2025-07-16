@@ -15,6 +15,7 @@ interface TaskBoardProps {
   onDeleteTask?: (taskId: string) => void;
   onStatusChange?: (taskId: string, newStatus: Task['status']) => void;
   onMemberTaskUpdate?: (taskId: string, progress: number, memberNotes: string) => void;
+  isLoading?: boolean;
 }
 
 const TaskBoard = ({ 
@@ -26,7 +27,8 @@ const TaskBoard = ({
   onEditTask, 
   onDeleteTask, 
   onStatusChange, 
-  onMemberTaskUpdate 
+  onMemberTaskUpdate,
+  isLoading = false
 }: TaskBoardProps) => {
   const statusColumns = [
     { id: 'todo', title: 'کرنا ہے', bgColor: 'bg-gray-50' },
@@ -51,6 +53,25 @@ const TaskBoard = ({
     return filteredTasks;
   };
 
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('text/plain', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: Task['status']) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('text/plain');
+    
+    if (taskId && onStatusChange && userRole === 'admin') {
+      onStatusChange(taskId, newStatus);
+    }
+  };
+
   console.log('TaskBoard - Rendering with:', {
     totalTasks: tasks.length,
     userRole,
@@ -63,13 +84,39 @@ const TaskBoard = ({
     }
   });
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">
+        {statusColumns.map((column) => (
+          <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">
+                {column.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
+                لوڈ ہو رہا ہے...
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 p-4">
       {statusColumns.map((column) => {
         const columnTasks = getTasksByStatus(column.id as Task['status']);
         
         return (
-          <Card key={column.id} className={`${column.bgColor} border-t-4 border-t-blue-500`}>
+          <Card 
+            key={column.id} 
+            className={`${column.bgColor} border-t-4 border-t-blue-500 transition-all duration-200 hover:shadow-lg`}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, column.id as Task['status'])}
+          >
             <CardHeader className="pb-4">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-sm sm:text-lg font-semibold" dir="rtl">
@@ -93,23 +140,29 @@ const TaskBoard = ({
               )}
             </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
-              <div className="space-y-3">
+              <div className="space-y-3 min-h-[200px]">
                 {columnTasks.map((task) => (
-                  <TaskCard
+                  <div
                     key={task.id}
-                    task={task}
-                    userRole={userRole}
-                    userName={userName}
-                    userId={userId}
-                    onEdit={userRole === 'admin' ? onEditTask : undefined}
-                    onDelete={userRole === 'admin' ? onDeleteTask : undefined}
-                    onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
-                    onMemberTaskUpdate={onMemberTaskUpdate}
-                  />
+                    draggable={userRole === 'admin'}
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    className={`cursor-${userRole === 'admin' ? 'grab' : 'default'} active:cursor-grabbing`}
+                  >
+                    <TaskCard
+                      task={task}
+                      userRole={userRole}
+                      userName={userName}
+                      userId={userId}
+                      onEdit={userRole === 'admin' ? onEditTask : undefined}
+                      onDelete={userRole === 'admin' ? onDeleteTask : undefined}
+                      onStatusChange={userRole === 'admin' ? onStatusChange : undefined}
+                      onMemberTaskUpdate={onMemberTaskUpdate}
+                    />
+                  </div>
                 ))}
                 {columnTasks.length === 0 && (
-                  <div className="text-center text-gray-500 py-8 text-sm" dir="rtl">
-                    {userRole === 'member' ? 'آپ کے لیے کوئی ٹاسک نہیں' : 'کوئی ٹاسک نہیں'}
+                  <div className="text-center text-gray-500 py-8 text-sm border-2 border-dashed border-gray-300 rounded-lg" dir="rtl">
+                    {userRole === 'member' ? 'آپ کے لیے کوئی ٹاسک نہیں' : 'کوئی ٹاسک نہیں - یہاں ٹاسک چھوڑیں'}
                   </div>
                 )}
               </div>
