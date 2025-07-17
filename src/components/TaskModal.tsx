@@ -6,16 +6,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Task } from './TaskCard';
+import { Profile } from '@/hooks/useAuth';
 
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Omit<Task, 'id' | 'created_at'>) => void; // Updated to created_at
+  onSave: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>;
   task?: Task | null;
   mode: 'create' | 'edit';
+  profiles: Profile[];
 }
 
-const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
+const TaskModal = ({ isOpen, onClose, onSave, task, mode, profiles }: TaskModalProps) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -53,9 +55,9 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode }: TaskModalProps) => {
     }
   }, [task, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    await onSave(formData);
     onClose();
   };
 
