@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, Bell, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useDatabaseRealtime } from '@/contexts/DatabaseRealtimeContext';
-import { useNotificationHandler } from './NotificationHandler';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DatabaseService } from '@/services/DatabaseService';
 import NotificationPanel from './NotificationPanel';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   userRole: 'admin' | 'member';
@@ -24,22 +25,78 @@ const Header = ({
   notifications = 0,
   onNotificationClick
 }: HeaderProps) => {
-  const { 
-    notifications: realtimeNotifications, 
-    tasks, 
-    deleteNotification, 
-    clearAllNotifications 
-  } = useDatabaseRealtime();
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const queryClient = useQueryClient();
   
-  const {
-    isNotificationPanelOpen,
-    setIsNotificationPanelOpen,
-    handleMarkAsRead,
-    handleMarkAllAsRead,
-    unreadNotifications
-  } = useNotificationHandler({
-    notifications: realtimeNotifications
+  // Fetch notifications and tasks using React Query
+  const { data: realtimeNotifications = [] } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: DatabaseService.getNotifications,
+    staleTime: 30 * 1000,
   });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: DatabaseService.getTasks,
+    staleTime: 30 * 1000,
+  });
+
+  // Notification mutations
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+      if (error) throw error;
+      return notificationId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('is_read', false);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
+
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+      if (error) throw error;
+      return notificationId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
+
+  const clearAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
+
+  const unreadNotifications = realtimeNotifications.filter(n => !n.is_read).length;
 
   // Generate simple text report instead of PDF
   const generateReport = () => {
@@ -194,10 +251,10 @@ const Header = ({
         notifications={realtimeNotifications}
         isOpen={isNotificationPanelOpen}
         onClose={() => setIsNotificationPanelOpen(false)}
-        onMarkAsRead={handleMarkAsRead}
-        onMarkAllAsRead={handleMarkAllAsRead}
-        onDeleteNotification={deleteNotification}
-        onClearAll={clearAllNotifications}
+        onMarkAsRead={markAsReadMutation.mutate}
+        onMarkAllAsRead={markAllAsReadMutation.mutate}
+        onDeleteNotification={deleteNotificationMutation.mutate}
+        onClearAll={clearAllNotificationsMutation.mutate}
       />
     </>
   );

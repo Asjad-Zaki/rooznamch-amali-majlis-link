@@ -66,7 +66,7 @@ const Dashboard = ({
     }
   }, [tasks, viewMode, userName]);
 
-  // Handle task operations with optimistic updates
+  // Handle task operations with optimistic updates and notifications
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
     try {
       // Optimistic update
@@ -78,7 +78,17 @@ const Dashboard = ({
 
       const success = await DatabaseService.updateTask(taskId, updates);
       
-      if (!success) {
+      if (success) {
+        // Create notification for status changes
+        if (updates.status) {
+          await DatabaseService.createNotification({
+            title: 'ٹاسک اپڈیٹ',
+            message: `ٹاسک کی حالت تبدیل ہوئی: ${updates.status}`,
+            type: 'task_updated'
+          });
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+      } else {
         // Revert on failure
         await refetchTasks();
       }
@@ -97,6 +107,14 @@ const Dashboard = ({
           newTask,
           ...oldTasks
         ]);
+        
+        // Create notification
+        await DatabaseService.createNotification({
+          title: 'نیا ٹاسک',
+          message: `نیا ٹاسک "${taskData.title}" بنایا گیا`,
+          type: 'task_created'
+        });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -106,6 +124,8 @@ const Dashboard = ({
 
   const handleTaskDelete = async (taskId: string) => {
     try {
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      
       // Optimistic delete
       queryClient.setQueryData(['tasks'], (oldTasks: Task[] = []) =>
         oldTasks.filter(task => task.id !== taskId)
@@ -113,7 +133,15 @@ const Dashboard = ({
 
       const success = await DatabaseService.deleteTask(taskId);
       
-      if (!success) {
+      if (success && taskToDelete) {
+        // Create notification
+        await DatabaseService.createNotification({
+          title: 'ٹاسک ڈیلیٹ',
+          message: `ٹاسک "${taskToDelete.title}" ڈیلیٹ کیا گیا`,
+          type: 'task_deleted'
+        });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } else if (!success) {
         // Revert on failure
         await refetchTasks();
       }

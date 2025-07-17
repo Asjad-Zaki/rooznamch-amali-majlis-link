@@ -1,11 +1,13 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AuthPage from '@/components/AuthPage';
 import Dashboard from '@/components/Dashboard';
 import { DatabaseRealtimeProvider } from '@/components/DatabaseRealtimeProvider';
 import { useAuth } from '@/hooks/useAuth';
-import { useQueryClient } from '@tanstack/react-query';
+import { DatabaseService } from '@/services/DatabaseService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -22,8 +24,48 @@ const Index = () => {
   const { session, loading, user: authUser, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [notifications, setNotifications] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'admin' | 'member'>('member');
+
+  // Fetch notifications using React Query
+  const { data: notifications = [], refetch: refetchNotifications } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: DatabaseService.getNotifications,
+    enabled: !!session,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Set up real-time subscriptions for notifications
+  useEffect(() => {
+    if (!session) return;
+
+    const notificationsChannel = supabase
+      .channel('notifications-realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'notifications' },
+        (payload) => {
+          console.log('Notification change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+      )
+      .subscribe();
+
+    const tasksChannel = supabase
+      .channel('tasks-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        (payload) => {
+          console.log('Task change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(tasksChannel);
+    };
+  }, [session, queryClient]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -69,6 +111,10 @@ const Index = () => {
     }
   }, [profile?.role]);
 
+  const handleUpdateNotifications = useCallback(() => {
+    refetchNotifications();
+  }, [refetchNotifications]);
+
   // Show loading spinner
   if (loading) {
     return (
@@ -103,7 +149,7 @@ const Index = () => {
         onLogout={handleLogout}
         onRoleSwitch={actualUserRole === 'admin' ? handleRoleSwitch : undefined}
         notifications={notifications}
-        onUpdateNotifications={setNotifications}
+        onUpdateNotifications={handleUpdateNotifications}
         viewMode={viewMode}
         actualRole={actualUserRole}
       />
