@@ -21,7 +21,7 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Use React Query for profile data
+  // Use React Query for profile data with real-time updates
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
@@ -35,19 +35,6 @@ export const useAuth = () => {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        // Create default admin profile for admin@gmail.com
-        if (user.email === 'admin@gmail.com') {
-          return {
-            id: user.id,
-            name: 'Admin User',
-            email: 'admin@gmail.com',
-            role: 'admin' as const,
-            secret_number: 'ADMIN123',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-        }
         return null;
       }
 
@@ -63,8 +50,8 @@ export const useAuth = () => {
       };
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds for real-time feel
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   useEffect(() => {
@@ -105,18 +92,32 @@ export const useAuth = () => {
           if (event === 'SIGNED_OUT') {
             // Clear all React Query cache on logout
             queryClient.clear();
+          } else if (event === 'SIGNED_IN' && session?.user) {
+            // Invalidate profile cache when user signs in
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
           }
           
-          if (!session) {
-            setLoading(false);
-          }
+          setLoading(false);
         }
       }
     );
 
+    // Set up real-time subscription for profiles
+    const profilesChannel = supabase
+      .channel('profiles-realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('Profile change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['profile'] });
+        }
+      )
+      .subscribe();
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      supabase.removeChannel(profilesChannel);
     };
   }, [queryClient]);
 
@@ -135,18 +136,49 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { name },
+          data: { 
+            name,
+            role: 'member'
+          },
           emailRedirectTo: `${window.location.origin}/`
         }
       });
-      return { error };
+      
+      if (error) {
+        return { error, data: null };
+      }
+
+      return { error: null, data };
     } catch (error) {
       console.error('Sign up error:', error);
-      return { error };
+      return { error, data: null };
+    }
+  };
+
+  const memberLogin = async (secretNumber: string) => {
+    try {
+      // Find member by secret number
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('secret_number', secretNumber)
+        .eq('role', 'member')
+        .eq('is_active', true)
+        .single();
+
+      if (profileError || !profile) {
+        return { error: new Error('Invalid secret number or inactive account'), data: null };
+      }
+
+      // Create a temporary session for members (since they don't have email/password)
+      return { error: null, data: profile };
+    } catch (error) {
+      console.error('Member login error:', error);
+      return { error, data: null };
     }
   };
 
@@ -187,5 +219,6 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    memberLogin,
   };
 };

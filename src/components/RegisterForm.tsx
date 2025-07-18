@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -19,6 +19,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { signUp } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +49,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
     }
 
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            name: name,
-            role: 'member', // Default role for self-registered users
-            is_active: true, // Default to active
-          },
-        },
-      });
+      const { data, error: authError } = await signUp(email, password, name);
 
       if (authError) {
         console.error('RegisterForm: Auth error:', authError.message);
@@ -71,17 +62,17 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         return;
       }
 
-      if (data.user) {
+      if (data?.user) {
         toast({
           title: "رجسٹریشن کامیاب",
-          description: "آپ کا اکاؤنٹ کامیابی سے بن گیا ہے۔ اب آپ لاگ ان کر سکتے ہیں۔",
+          description: "آپ کا اکاؤنٹ کامیابی سے بن گیا ہے۔ براہ کرم اپنی ای میل چیک کریں۔",
         });
-        onSwitchToLogin(); // Redirect to login page after successful registration
+        onSwitchToLogin();
       } else {
         setError('رجسٹریشن میں خرابی ہوئی: کوئی صارف ڈیٹا نہیں ملا');
         toast({
           title: "رجسٹریشن ناکام",
-          description: "رجسٹریشن میں خرابی ہوئی: کوئی صارف ڈیٹا نہیں ملا",
+          description: "رجسٹریشن میں خرابی ہوئی",
           variant: "destructive",
         });
       }

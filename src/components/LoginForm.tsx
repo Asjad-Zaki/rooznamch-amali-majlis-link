@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LoginFormProps {
   onLogin: (role: 'admin' | 'member', name: string, userId: string) => void;
@@ -28,6 +28,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('member');
   const { toast } = useToast();
+  const { signIn, memberLogin } = useAuth();
 
   // Page load animation
   useEffect(() => {
@@ -44,10 +45,7 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
     console.log('LoginForm: Attempting admin login for email:', adminEmail);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: adminPassword,
-      });
+      const { error: authError } = await signIn(adminEmail, adminPassword);
 
       if (authError) {
         console.error('LoginForm: Auth error:', authError.message);
@@ -59,32 +57,11 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         });
         return;
       }
-      console.log('LoginForm: Auth successful, user:', data.user);
 
-      // Verify user role from the profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name, role, is_active')
-        .eq('id', data.user?.id)
-        .single();
-
-      if (profileError || !profile || !profile.is_active || profile.role !== 'admin') {
-        console.error('LoginForm: Profile verification failed. Profile:', profile, 'Error:', profileError?.message);
-        setError('غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے');
-        toast({
-          title: "لاگ ان ناکام",
-          description: "غلط ای میل یا پاس ورڈ، یا آپ کا اکاؤنٹ غیر فعال ہے",
-          variant: "destructive",
-        });
-        await supabase.auth.signOut();
-        return;
-      }
-      console.log('LoginForm: Admin profile verified:', profile);
-
-      onLogin(profile.role as 'admin' | 'member', profile.name, profile.id);
+      // The auth state will update automatically and redirect via useAuth
       toast({
         title: "لاگ ان کامیاب",
-        description: `خوش آمدید، ${profile.name}`,
+        description: "خوش آمدید",
       });
 
     } catch (err: any) {
@@ -107,16 +84,10 @@ const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
     console.log('LoginForm: Attempting member login with secret number:', memberSecretNumber);
 
     try {
-      // Find member by secret number
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name, role, is_active')
-        .eq('secret_number', memberSecretNumber)
-        .eq('role', 'member')
-        .single();
+      const { data: profile, error: profileError } = await memberLogin(memberSecretNumber);
 
-      if (profileError || !profile || !profile.is_active) {
-        console.error('LoginForm: Member profile verification failed. Profile:', profile, 'Error:', profileError?.message);
+      if (profileError || !profile) {
+        console.error('LoginForm: Member profile verification failed:', profileError?.message);
         setError('غلط خفیہ نمبر یا آپ کا اکاؤنٹ غیر فعال ہے');
         toast({
           title: "لاگ ان ناکام",

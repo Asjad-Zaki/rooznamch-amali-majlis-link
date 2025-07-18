@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/LoginForm';
 import RegisterForm from '@/components/RegisterForm'; // Import the new RegisterForm
-import { useAuth } from '@/integrations/supabase/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 const Login = () => {
   const { session, loading } = useAuth();
