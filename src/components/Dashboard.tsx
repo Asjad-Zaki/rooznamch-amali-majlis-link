@@ -269,6 +269,8 @@ const Dashboard = ({
 
           {activeTab === 'management' && userRole === 'admin' && (
             <TaskManager
+              userRole={userRole}
+              userName={userName}
               tasks={filteredTasks}
               profiles={profiles}
               onTaskCreate={handleTaskCreate}

@@ -32,9 +32,9 @@ const TaskBoard = ({
 }: TaskBoardProps) => {
   const statusColumns = [
     { id: 'todo', title: 'کرنا ہے', bgColor: 'bg-gray-50' },
-    { id: 'inprogress', title: 'جاری', bgColor: 'bg-blue-50' },
-    { id: 'review', title: 'جائزہ', bgColor: 'bg-yellow-50' },
-    { id: 'done', title: 'مکمل', bgColor: 'bg-green-50' }
+    { id: 'in-progress', title: 'جاری', bgColor: 'bg-blue-50' },
+    { id: 'in-review', title: 'جائزہ', bgColor: 'bg-yellow-50' },
+    { id: 'completed', title: 'مکمل', bgColor: 'bg-green-50' }
   ];
 
   const getTasksByStatus = (status: Task['status']) => {
@@ -78,9 +78,9 @@ const TaskBoard = ({
     userName,
     tasksPerStatus: {
       todo: tasks.filter(t => t.status === 'todo').length,
-      inprogress: tasks.filter(t => t.status === 'inprogress').length,
-      review: tasks.filter(t => t.status === 'review').length,
-      done: tasks.filter(t => t.status === 'done').length
+      'in-progress': tasks.filter(t => t.status === 'in-progress').length,
+      'in-review': tasks.filter(t => t.status === 'in-review').length,
+      completed: tasks.filter(t => t.status === 'completed').length
     }
   });
 

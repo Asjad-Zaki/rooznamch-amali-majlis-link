@@ -11,10 +11,11 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'inprogress' | 'review' | 'done';
+  status: 'todo' | 'in-progress' | 'in-review' | 'completed';
   priority: 'low' | 'medium' | 'high';
   assigned_to_name: string;
   created_at: string;
+  updated_at: string;
   due_date: string;
   progress: number;
   member_notes: string;
@@ -50,16 +51,16 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
 
   const statusLabels = {
     todo: 'کرنا ہے',
-    inprogress: 'جاری',
-    review: 'جائزہ',
-    done: 'مکمل'
+    'in-progress': 'جاری',
+    'in-review': 'جائزہ',
+    completed: 'مکمل'
   };
 
   const statusColors = {
     todo: 'bg-gray-100 text-gray-700 border-gray-200',
-    inprogress: 'bg-blue-100 text-blue-700 border-blue-200',
-    review: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    done: 'bg-green-100 text-green-700 border-green-200'
+    'in-progress': 'bg-blue-100 text-blue-700 border-blue-200',
+    'in-review': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    completed: 'bg-green-100 text-green-700 border-green-200'
   };
 
   const handleMemberUpdate = () => {
@@ -214,7 +215,7 @@ const TaskCard = ({ task, userRole, userName, userId, onEdit, onDelete, onStatus
         {/* Only show status change buttons for admins */}
         {userRole === 'admin' && onStatusChange && (
           <div className="flex flex-wrap gap-1 mt-4 pt-3 border-t border-gray-100">
-            {(['todo', 'inprogress', 'review', 'done'] as const).map((status) => (
+            {(['todo', 'in-progress', 'in-review', 'completed'] as const).map((status) => (
               <Button
                 key={status}
                 variant={task.status === status ? "default" : "outline"}

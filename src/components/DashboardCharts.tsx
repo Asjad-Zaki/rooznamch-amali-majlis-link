@@ -11,9 +11,9 @@ interface DashboardChartsProps {
 const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
   const statusData = [
     { name: 'کرنا ہے', value: tasks.filter(t => t.status === 'todo').length, color: '#8884d8' },
-    { name: 'جاری', value: tasks.filter(t => t.status === 'inprogress').length, color: '#82ca9d' },
-    { name: 'جائزہ', value: tasks.filter(t => t.status === 'review').length, color: '#ffc658' },
-    { name: 'مکمل', value: tasks.filter(t => t.status === 'done').length, color: '#ff7300' }
+    { name: 'جاری', value: tasks.filter(t => t.status === 'in-progress').length, color: '#82ca9d' },
+    { name: 'جائزہ', value: tasks.filter(t => t.status === 'in-review').length, color: '#ffc658' },
+    { name: 'مکمل', value: tasks.filter(t => t.status === 'completed').length, color: '#ff7300' }
   ];
 
   const priorityData = [

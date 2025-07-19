@@ -14,9 +14,9 @@ export const generatePDFReport = (tasks: Task[], userName: string) => {
     
     const statusLabels = {
       todo: 'کرنا ہے',
-      inprogress: 'جاری',
-      review: 'جائزہ',
-      done: 'مکمل'
+      'in-progress': 'جاری',
+      'in-review': 'جائزہ',
+      completed: 'مکمل'
     };
 
     const priorityLabels = {
@@ -35,9 +35,9 @@ export const generatePDFReport = (tasks: Task[], userName: string) => {
 خلاصہ:
 ========
 کل ٹاسکس: ${tasks.length}
-مکمل ہونے والے: ${tasks.filter(t => t.status === 'done').length}  
-جاری: ${tasks.filter(t => t.status === 'inprogress').length}
-جائزہ میں: ${tasks.filter(t => t.status === 'review').length}
+مکمل ہونے والے: ${tasks.filter(t => t.status === 'completed').length}  
+جاری: ${tasks.filter(t => t.status === 'in-progress').length}
+جائزہ میں: ${tasks.filter(t => t.status === 'in-review').length}
 باقی: ${tasks.filter(t => t.status === 'todo').length}
 
 تفصیلی فہرست:

@@ -37,7 +37,7 @@ const DashboardStats = ({ tasks, userRole, userName }: DashboardStatsProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-lg sm:text-2xl font-bold text-green-600">
-            {filteredTasks.filter(t => t.status === 'done').length}
+            {filteredTasks.filter(t => t.status === 'completed').length}
           </div>
         </CardContent>
       </Card>
@@ -47,7 +47,7 @@ const DashboardStats = ({ tasks, userRole, userName }: DashboardStatsProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-lg sm:text-2xl font-bold text-blue-600">
-            {filteredTasks.filter(t => t.status === 'inprogress').length}
+            {filteredTasks.filter(t => t.status === 'in-progress').length}
           </div>
         </CardContent>
       </Card>

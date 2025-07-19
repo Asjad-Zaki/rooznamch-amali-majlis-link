@@ -57,7 +57,10 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode, profiles }: TaskModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData);
+    await onSave({
+      ...formData,
+      updated_at: new Date().toISOString()
+    });
     onClose();
   };
 
@@ -127,9 +130,9 @@ const TaskModal = ({ isOpen, onClose, onSave, task, mode, profiles }: TaskModalP
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todo" dir="rtl">کرنا ہے</SelectItem>
-                <SelectItem value="inprogress" dir="rtl">جاری</SelectItem>
-                <SelectItem value="review" dir="rtl">جائزہ</SelectItem>
-                <SelectItem value="done" dir="rtl">مکمل</SelectItem>
+                <SelectItem value="in-progress" dir="rtl">جاری</SelectItem>
+                <SelectItem value="in-review" dir="rtl">جائزہ</SelectItem>
+                <SelectItem value="completed" dir="rtl">مکمل</SelectItem>
               </SelectContent>
             </Select>
           </div>

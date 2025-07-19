@@ -22,82 +22,20 @@ interface TaskManagerProps {
   userRole: 'admin' | 'member';
   userName: string;
   className?: string;
+  tasks: Task[];
+  profiles: Profile[];
+  onTaskCreate: (taskData: Omit<Task, 'id' | 'created_at'>) => Promise<void>;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onTaskDelete: (taskId: string) => Promise<void>;
+  isLoading: boolean;
 }
 
-const TaskManager = ({ userRole, userName, className }: TaskManagerProps) => {
+const TaskManager = ({ userRole, userName, className, tasks, profiles, onTaskCreate, onTaskUpdate, onTaskDelete, isLoading }: TaskManagerProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Use the new tasks hook with real-time updates
-  const { 
-    tasks, 
-    isLoading, 
-    createTask, 
-    updateTask, 
-    deleteTask, 
-    updateTaskStatus,
-    isCreating,
-    isUpdating,
-    isDeleting
-  } = useTasks();
-
-  // Fetch profiles for task assignment
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-        
-        if (error) throw error;
-        setProfiles((data || []).map(p => ({
-          ...p,
-          role: p.role as 'admin' | 'member'
-        })));
-      } catch (error) {
-        console.error('Error fetching profiles:', error);
-      }
-    };
-
-    fetchProfiles();
-  }, []);
-
-  // Set up real-time subscription for tasks and profiles
-  useEffect(() => {
-    const tasksChannel = supabase
-      .channel('tasks-realtime-manager')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'tasks' },
-        (payload) => {
-          console.log('Task change:', payload);
-          queryClient.invalidateQueries({ queryKey: ['tasks'] });
-        }
-      )
-      .subscribe();
-
-    const profilesChannel = supabase
-      .channel('profiles-realtime-manager')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'profiles' },
-        (payload) => {
-          console.log('Profile change:', payload);
-          queryClient.invalidateQueries({ queryKey: ['profiles'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(tasksChannel);
-      supabase.removeChannel(profilesChannel);
-    };
-  }, [queryClient]);
 
   const handleAddTask = () => {
     setCurrentTask(null);
@@ -112,22 +50,11 @@ const TaskManager = ({ userRole, userName, className }: TaskManagerProps) => {
   };
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'created_at'>) => {
-    const cleanTaskData: TaskData = {
-      title: taskData.title,
-      description: taskData.description || '',
-      status: taskData.status,
-      priority: taskData.priority,
-      assigned_to_name: taskData.assigned_to_name || '',
-      due_date: taskData.due_date || '',
-      member_notes: taskData.member_notes || '',
-      progress: taskData.progress || 0,
-    };
-
     try {
       if (modalMode === 'create') {
-        createTask(cleanTaskData);
+        await onTaskCreate(taskData);
       } else if (currentTask) {
-        updateTask({ id: currentTask.id, data: cleanTaskData });
+        await onTaskUpdate(currentTask.id, taskData);
       }
       
       setIsModalOpen(false);
@@ -139,7 +66,7 @@ const TaskManager = ({ userRole, userName, className }: TaskManagerProps) => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      deleteTask(taskId);
+      await onTaskDelete(taskId);
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -147,7 +74,7 @@ const TaskManager = ({ userRole, userName, className }: TaskManagerProps) => {
 
   const handleTaskStatusChange = async (taskId: string, newStatus: Task['status']) => {
     try {
-      updateTaskStatus({ id: taskId, status: newStatus });
+      await onTaskUpdate(taskId, { status: newStatus });
     } catch (error) {
       console.error('Error updating task status:', error);
     }
@@ -155,10 +82,7 @@ const TaskManager = ({ userRole, userName, className }: TaskManagerProps) => {
 
   const handleMemberTaskUpdate = async (taskId: string, progress: number, memberNotes: string) => {
     try {
-      updateTask({ 
-        id: taskId, 
-        data: { progress, member_notes: memberNotes }
-      });
+      await onTaskUpdate(taskId, { progress, member_notes: memberNotes });
       toast({
         title: "کامیابی",
         description: "آپ کی پیش قدمی محفوظ ہو گئی",

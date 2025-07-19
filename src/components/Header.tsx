@@ -113,9 +113,9 @@ const Header = ({
       reportContent += `Task Summary:\n`;
       reportContent += `Total Tasks: ${tasks.length}\n`;
       reportContent += `To Do: ${tasks.filter(t => t.status === 'todo').length}\n`;
-      reportContent += `In Progress: ${tasks.filter(t => t.status === 'inprogress').length}\n`;
-      reportContent += `Under Review: ${tasks.filter(t => t.status === 'review').length}\n`;
-      reportContent += `Completed: ${tasks.filter(t => t.status === 'done').length}\n\n`;
+      reportContent += `In Progress: ${tasks.filter(t => t.status === 'in-progress').length}\n`;
+      reportContent += `Under Review: ${tasks.filter(t => t.status === 'in-review').length}\n`;
+      reportContent += `Completed: ${tasks.filter(t => t.status === 'completed').length}\n\n`;
 
       reportContent += `Task Details:\n`;
       tasks.forEach((task, index) => {

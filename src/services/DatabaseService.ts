@@ -62,6 +62,7 @@ export class DatabaseService {
         priority: taskData.priority as Task['priority'],
         assigned_to_name: taskData.assigned_to_name || '',
         created_at: taskData.created_at,
+        updated_at: taskData.updated_at || taskData.created_at,
         due_date: taskData.due_date || '',
         progress: taskData.progress || 0,
         member_notes: taskData.member_notes || ''
