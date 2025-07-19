@@ -31,10 +31,14 @@ export const useAuth = () => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (!data) {
         return null;
       }
 
@@ -50,8 +54,9 @@ export const useAuth = () => {
       };
     },
     enabled: !!user?.id,
-    staleTime: 30 * 1000, // 30 seconds for real-time feel
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: false, // Don't retry on error to prevent infinite loading
   });
 
   useEffect(() => {
