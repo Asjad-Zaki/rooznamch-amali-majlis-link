@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import TaskBoard from './TaskBoard';
 import TaskManager from './TaskManager';
+import TaskModal from './TaskModal';
 import UserManagement from './UserManagement';
 import DashboardStats from './DashboardStats';
 import DashboardCharts from './DashboardCharts';
@@ -10,6 +11,10 @@ import Header from './Header';
 import { Task } from './TaskCard';
 import { DatabaseService } from '@/services/DatabaseService';
 import { useDatabaseRealtime } from '@/contexts/DatabaseRealtimeContext';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
+import { generatePDFReport } from '@/lib/pdf-generator';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardProps {
   userRole: 'admin' | 'member';
@@ -38,6 +43,14 @@ const Dashboard = ({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Notification sound function
+  const playNotificationSound = () => {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvGIaAzyM1fa+diMpJG7A7+OSQgoQVLnl7a5IDglMo9X7uGUdAjmN2vlgJ');
+    audio.volume = 0.3;
+    audio.play().catch(e => console.log('Sound play failed:', e));
+  };
 
   // Use React Query for tasks data
   const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
@@ -79,11 +92,20 @@ const Dashboard = ({
       const success = await DatabaseService.updateTask(taskId, updates);
       
       if (success) {
-        // Create notification for status changes
+        // Create notification for status changes with sound
         if (updates.status) {
+          playNotificationSound();
+          
+          const statusLabels = {
+            'todo': 'کرنا ہے',
+            'in-progress': 'جاری',
+            'in-review': 'جائزہ',
+            'completed': 'مکمل'
+          };
+          
           await DatabaseService.createNotification({
             title: 'ٹاسک اپڈیٹ',
-            message: `ٹاسک کی حالت تبدیل ہوئی: ${updates.status}`,
+            message: `ٹاسک کی حالت تبدیل ہوئی: ${statusLabels[updates.status as keyof typeof statusLabels]}`,
             type: 'task_updated'
           });
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -108,6 +130,15 @@ const Dashboard = ({
           ...oldTasks
         ]);
         
+        // Play notification sound
+        playNotificationSound();
+        
+        // Show success toast
+        toast({
+          title: "کامیابی",
+          description: `نیا ٹاسک "${taskData.title}" بن گیا`,
+        });
+        
         // Create notification
         await DatabaseService.createNotification({
           title: 'نیا ٹاسک',
@@ -118,6 +149,11 @@ const Dashboard = ({
       }
     } catch (error) {
       console.error('Error creating task:', error);
+      toast({
+        title: "خرابی",
+        description: "ٹاسک بناتے وقت خرابی ہوئی",
+        variant: "destructive",
+      });
       await refetchTasks();
     }
   };
@@ -161,9 +197,34 @@ const Dashboard = ({
     setIsTaskModalOpen(false);
   };
 
-  const handleTaskModalSave = async (updatedTask: Task) => {
-    await handleTaskUpdate(updatedTask.id, updatedTask);
+  const handleTaskModalSave = async (taskData: Omit<Task, 'id' | 'created_at'>) => {
+    if (selectedTask) {
+      // Edit mode
+      await handleTaskUpdate(selectedTask.id, taskData);
+    } else {
+      // Create mode
+      await handleTaskCreate(taskData);
+    }
     handleTaskModalClose();
+  };
+
+  // Download report function
+  const handleDownloadReport = async () => {
+    try {
+      await generatePDFReport(filteredTasks, userName);
+      
+      toast({
+        title: "کامیابی",
+        description: "رپورٹ ڈاؤن لوڈ ہو گئی",
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "خرابی",
+        description: "رپورٹ بناتے وقت خرابی ہوئی",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddTask = () => {
@@ -250,6 +311,19 @@ const Dashboard = ({
           </div>
         </div>
 
+        {/* Download Report Button */}
+        <div className="flex justify-end mb-4">
+          <Button 
+            onClick={handleDownloadReport}
+            variant="outline"
+            className="flex items-center gap-2"
+            dir="rtl"
+          >
+            <Download className="h-4 w-4" />
+            رپورٹ ڈاؤن لوڈ کریں
+          </Button>
+        </div>
+
         {/* Tab Content */}
         <div className="space-y-6">
           {activeTab === 'tasks' && (
@@ -296,6 +370,16 @@ const Dashboard = ({
           )}
         </div>
       </div>
+
+      {/* Task Modal */}
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={handleTaskModalClose}
+        onSave={handleTaskModalSave}
+        task={selectedTask}
+        mode={selectedTask ? 'edit' : 'create'}
+        profiles={profiles}
+      />
     </div>
   );
 };
