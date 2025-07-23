@@ -211,17 +211,26 @@ const Dashboard = ({
   // Download report function
   const handleDownloadReport = async () => {
     try {
+      if (filteredTasks.length === 0) {
+        toast({
+          title: "خرابی",
+          description: "رپورٹ بنانے کے لیے کم از کم ایک ٹاسک ہونا ضروری ہے",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await generatePDFReport(filteredTasks, userName);
       
       toast({
         title: "کامیابی",
-        description: "رپورٹ ڈاؤن لوڈ ہو گئی",
+        description: `PDF رپورٹ کامیابی سے ڈاؤن لوڈ ہو گئی (${filteredTasks.length} ٹاسکس شامل)`,
       });
     } catch (error) {
       console.error('Error generating report:', error);
       toast({
         title: "خرابی",
-        description: "رپورٹ بناتے وقت خرابی ہوئی",
+        description: "PDF رپورٹ بناتے وقت خرابی ہوئی۔ دوبارہ کوشش کریں۔",
         variant: "destructive",
       });
     }
