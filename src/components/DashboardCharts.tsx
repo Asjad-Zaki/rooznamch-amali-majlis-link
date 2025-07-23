@@ -23,10 +23,10 @@ const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      <Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+      <Card className="glass-card hover-lift animate-fadeInLeft rounded-xl shadow-lg">
         <CardHeader>
-          <CardTitle dir="rtl" className="text-sm sm:text-base">حالت کے مطابق</CardTitle>
+          <CardTitle dir="rtl" className="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">حالت کے مطابق</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={150}>
@@ -39,6 +39,8 @@ const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
                 fill="#8884d8"
                 dataKey="value"
                 label={({ name, value }) => `${name}: ${value}`}
+                animationBegin={0}
+                animationDuration={800}
               >
                 {statusData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -49,18 +51,25 @@ const DashboardCharts = ({ tasks }: DashboardChartsProps) => {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="glass-card hover-lift animate-fadeInRight rounded-xl shadow-lg">
         <CardHeader>
-          <CardTitle dir="rtl" className="text-sm sm:text-base">ترجیح کے مطابق</CardTitle>
+          <CardTitle dir="rtl" className="text-sm sm:text-base font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">ترجیح کے مطابق</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={priorityData}>
+            <BarChart data={priorityData} animationBegin={0}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#8884d8" />
+              <Bar dataKey="value" fill="url(#colorGradient)" animationDuration={800}>
+                <defs>
+                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#764ba2" stopOpacity={0.8}/>
+                  </linearGradient>
+                </defs>
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

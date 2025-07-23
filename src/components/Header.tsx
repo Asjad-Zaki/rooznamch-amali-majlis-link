@@ -122,30 +122,33 @@ const Header = ({
 
   return (
     <>
-      <header className="bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+      <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 text-white shadow-2xl backdrop-blur-sm animate-slideInFromTop">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
             {/* Logo and Title Section */}
-            <div className="flex items-center space-x-3 sm:space-x-4 order-1 sm:order-1" dir="rtl">
-              <img src="/lovable-uploads/e1652408-702e-47c9-834c-bafadef748e9.png" alt="Majlis e Dawatul Haq Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white p-1 flex-shrink-0" />
+            <div className="flex items-center space-x-3 sm:space-x-4 order-1 sm:order-1 animate-fadeInLeft" dir="rtl">
+              <div className="relative">
+                <img src="/lovable-uploads/e1652408-702e-47c9-834c-bafadef748e9.png" alt="Majlis e Dawatul Haq Logo" className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white p-1 flex-shrink-0 hover:scale-110 transition-transform duration-300 shadow-lg animate-bounceIn" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur opacity-30 animate-pulse"></div>
+              </div>
               <div className="text-center sm:text-right">
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight">مجلس دعوۃ الحق</h1>
-                <span className="text-xs sm:text-sm opacity-90 block mt-0.5">ٹاسک  مینجمنٹ سسٹم</span>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent animate-fadeInDown">مجلس دعوۃ الحق</h1>
+                <span className="text-sm sm:text-base opacity-90 block mt-1 animate-fadeInDown delay-100">ٹاسک  مینجمنٹ سسٹم</span>
               </div>
             </div>
 
             {/* User Actions Section */}
-            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 order-2 sm:order-2 flex-wrap justify-center sm:justify-end">
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 order-2 sm:order-2 flex-wrap justify-center sm:justify-end animate-fadeInRight">
               {/* Report Generation Button - Only for admin */}
               {userRole === 'admin' && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={generateReport}
-                  className="text-white hover:bg-white/10 p-2 sm:p-2.5"
+                  className="text-white hover:bg-white/20 p-2 sm:p-2.5 rounded-xl hover:scale-110 transition-all duration-300 hover:shadow-lg"
                   title="Generate Report"
                 >
-                  <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Download className="h-4 w-4 sm:h-5 sm:w-5 animate-bounce" />
                 </Button>
               )}
               
@@ -155,11 +158,11 @@ const Header = ({
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setIsNotificationPanelOpen(true)}
-                  className="text-white hover:bg-white/10 relative p-2 sm:p-2.5"
+                  className="text-white hover:bg-white/20 relative p-2 sm:p-2.5 rounded-xl hover:scale-110 transition-all duration-300 hover:shadow-lg"
                 >
-                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
                   {unreadNotifications > 0 && (
-                    <Badge className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs min-w-0 rounded-full">
+                    <Badge className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs min-w-0 rounded-full animate-bounce shadow-lg">
                       {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </Badge>
                   )}
@@ -167,17 +170,17 @@ const Header = ({
               </div>
               
               {/* User Welcome Text */}
-              <div className="hidden sm:flex flex-col items-end text-right" dir="rtl">
-                <span className="text-sm lg:text-base font-medium">خوش آمدید، {userName}</span>
-                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs opacity-90">
+              <div className="hidden sm:flex flex-col items-end text-right animate-fadeInDown delay-200" dir="rtl">
+                <span className="text-sm lg:text-base font-medium bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">خوش آمدید، {userName}</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs opacity-90 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-300">
                   {userRole === 'admin' ? 'منتظم' : 'رکن'}
                 </span>
               </div>
 
               {/* Mobile User Info */}
-              <div className="flex sm:hidden items-center gap-2" dir="rtl">
+              <div className="flex sm:hidden items-center gap-2 animate-fadeInUp delay-300" dir="rtl">
                 <span className="text-sm font-medium">{userName}</span>
-                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs backdrop-blur-sm border border-white/30">
                   {userRole === 'admin' ? 'منتظم' : 'رکن'}
                 </span>
               </div>
@@ -188,9 +191,9 @@ const Header = ({
                   variant="outline" 
                   size="sm" 
                   onClick={onRoleSwitch}
-                  className="text-white border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3"
+                  className="text-white border-white/30 hover:bg-white/20 hover:border-white/60 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                 >
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:mr-2" />
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:mr-2 animate-pulse" />
                   <span dir="rtl" className="hidden sm:inline">رکن کی نظر</span>
                   <span dir="rtl" className="sm:hidden">رکن</span>
                 </Button>
@@ -201,10 +204,10 @@ const Header = ({
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogoutClick}
-                className="text-white border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3"
+                className="text-white border-white/30 hover:bg-red-500/20 hover:border-red-300/60 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                 disabled={false}
               >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:mr-2" />
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:mr-2 hover:animate-spin" />
                 <span dir="rtl" className="hidden sm:inline">لاگ آؤٹ</span>
                 <span dir="rtl" className="sm:hidden">خروج</span>
               </Button>

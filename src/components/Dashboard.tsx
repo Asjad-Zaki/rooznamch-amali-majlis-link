@@ -259,7 +259,7 @@ const Dashboard = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fadeInUp">
       <Header
         userRole={userRole}
         userName={userName}
@@ -268,15 +268,15 @@ const Dashboard = ({
         notifications={notifications.length}
       />
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 animate-fadeInUp delay-200">
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-          <div className="flex flex-wrap border-b border-gray-200" dir="rtl">
+        <div className="glass-card rounded-xl shadow-xl mb-6 overflow-hidden hover-lift animate-scaleIn">
+          <div className="flex flex-wrap border-b border-gray-100" dir="rtl">
             <button
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'tasks'
-                  ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-b-2 border-blue-600 shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:scale-105'
               }`}
               onClick={() => setActiveTab('tasks')}
             >
@@ -288,8 +288,8 @@ const Dashboard = ({
                 <button
                   className={`px-4 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'management'
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-green-500 to-teal-600 text-white border-b-2 border-green-600 shadow-lg'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-green-50 hover:to-teal-50 hover:scale-105'
                   }`}
                   onClick={() => setActiveTab('management')}
                 >
@@ -298,8 +298,8 @@ const Dashboard = ({
                 <button
                   className={`px-4 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'users'
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white border-b-2 border-purple-600 shadow-lg'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:scale-105'
                   }`}
                   onClick={() => setActiveTab('users')}
                 >
@@ -308,8 +308,8 @@ const Dashboard = ({
                 <button
                   className={`px-4 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'analytics'
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white border-b-2 border-orange-600 shadow-lg'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:scale-105'
                   }`}
                   onClick={() => setActiveTab('analytics')}
                 >
@@ -321,20 +321,19 @@ const Dashboard = ({
         </div>
 
         {/* Download Report Button */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-6 animate-fadeInRight delay-300">
           <Button 
             onClick={handleDownloadReport}
-            variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 btn-gradient hover-lift px-6 py-3 rounded-xl shadow-lg"
             dir="rtl"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 animate-bounce" />
             رپورٹ ڈاؤن لوڈ کریں
           </Button>
         </div>
 
         {/* Tab Content */}
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeInUp delay-400">
           {activeTab === 'tasks' && (
             <TaskBoard
               tasks={filteredTasks}
@@ -351,7 +350,8 @@ const Dashboard = ({
           )}
 
           {activeTab === 'management' && userRole === 'admin' && (
-            <TaskManager
+            <div className="animate-fadeInLeft">
+              <TaskManager
               userRole={userRole}
               userName={userName}
               tasks={filteredTasks}
@@ -360,15 +360,18 @@ const Dashboard = ({
               onTaskUpdate={handleTaskUpdate}
               onTaskDelete={handleTaskDelete}
               isLoading={tasksLoading || profilesLoading}
-            />
+              />
+            </div>
           )}
 
           {activeTab === 'users' && userRole === 'admin' && (
-            <UserManagement />
+            <div className="animate-fadeInRight">
+              <UserManagement />
+            </div>
           )}
 
           {activeTab === 'analytics' && userRole === 'admin' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeInUp">
               <DashboardStats 
                 tasks={filteredTasks} 
                 userRole={userRole}
