@@ -1,5 +1,5 @@
-import 'jspdf-autotable';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { Task } from '@/components/TaskCard';
 
 // Extend jsPDF type to include autoTable
